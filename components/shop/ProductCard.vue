@@ -4,7 +4,7 @@
     <div class="absolute inset-0 bg-apple-blue/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
 
     <div class="w-full aspect-square bg-apple-offwhite rounded-xl mb-6 relative overflow-hidden flex items-center justify-center p-6 border border-apple-lightgray/40">
-      <NuxtImg :src="getImageSrc(product.imageType)" :alt="product.name" format="webp" loading="lazy" width="400" height="300" sizes="sm:100vw md:400px" class="w-full h-full object-contain relative z-10 transition-transform duration-500 group-hover:scale-110 drop-shadow-sm" />
+      <NuxtImg :src="getImageSrc(product.imageType)" :alt="product.name" format="webp" loading="lazy" width="600" height="313" sizes="sm:100vw md:400px" class="max-w-[95%] max-h-[95%] w-auto h-auto object-contain relative z-10 transition-transform duration-500 group-hover:scale-105 drop-shadow-sm" />
     </div>
     
     <div class="text-center flex-1 w-full flex flex-col pb-4">

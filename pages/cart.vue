@@ -17,7 +17,7 @@
           >
             <!-- Product Image -->
             <div class="w-full sm:w-32 aspect-square bg-apple-offwhite rounded-xl flex items-center justify-center shrink-0 border border-apple-lightgray/50 p-2 overflow-hidden">
-              <NuxtImg :src="getImageSrc(item.imageType)" :alt="item.name" format="webp" loading="lazy" width="200" height="200" sizes="sm:100px md:200px" class="w-full h-full object-contain drop-shadow-sm" />
+              <NuxtImg :src="getImageSrc(item.imageType)" :alt="item.name" format="webp" loading="lazy" width="600" height="313" sizes="sm:100px md:200px" class="max-w-full max-h-full w-auto h-auto object-contain drop-shadow-sm" />
             </div>
 
             <!-- Product Details -->

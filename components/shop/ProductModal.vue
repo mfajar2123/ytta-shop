@@ -20,9 +20,9 @@
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
           
           <!-- Product Image -->
-          <div class="bg-apple-offwhite rounded-2xl border border-apple-lightgray/50 p-8 flex items-center justify-center aspect-square relative group">
+          <div class="bg-apple-offwhite rounded-2xl border border-apple-lightgray/50 p-8 flex items-center justify-center aspect-square relative group overflow-hidden">
             <div class="absolute inset-0 bg-apple-blue/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl"></div>
-            <NuxtImg :src="getImageSrc(product.imageType)" :alt="product.name" format="webp" loading="lazy" width="600" height="600" sizes="sm:100vw md:600px" class="w-4/5 h-auto object-contain drop-shadow-sm transition-transform duration-500 group-hover:scale-105" />
+            <NuxtImg :src="getImageSrc(product.imageType)" :alt="product.name" format="webp" loading="lazy" width="600" height="313" sizes="sm:100vw md:600px" class="max-w-[95%] max-h-[95%] w-auto h-auto object-contain drop-shadow-sm transition-transform duration-500 group-hover:scale-105" />
           </div>
 
           <!-- Product Info -->
