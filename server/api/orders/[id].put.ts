@@ -2,6 +2,7 @@ import { db } from '../../db'
 import { orders } from '../../db/schema'
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
+import { logAdminAction } from '../../utils/logger'
 
 const updateOrderSchema = z.object({
   billingDetails: z.any().optional(),
@@ -38,6 +39,11 @@ export default defineEventHandler(async (event) => {
       .set(updateData)
       .where(eq(orders.id, id))
       .returning()
+
+    logAdminAction(event, 'UPDATE', 'ORDER', id.toString(), {
+      before: { billingDetails: existing.billingDetails, vesselDetails: existing.vesselDetails },
+      after: { billingDetails: updatedOrder.billingDetails, vesselDetails: updatedOrder.vesselDetails }
+    })
 
     return updatedOrder
   } catch (error: any) {

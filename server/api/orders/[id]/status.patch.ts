@@ -2,6 +2,7 @@ import { db } from '../../../db'
 import { orders, orderItems } from '../../../db/schema'
 import { eq } from 'drizzle-orm'
 import { updateOrderStatusSchema, isValidTransition } from '../../../utils/validation'
+import { logAdminAction } from '../../../utils/logger'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -50,6 +51,11 @@ export default defineEventHandler(async (event) => {
     if (!updatedOrder) {
       throw createError({ statusCode: 404, message: 'Order not found' })
     }
+
+    logAdminAction(event, 'UPDATE', 'ORDER', id.toString(), {
+      before: { status: currentOrder.status, adminNotes: currentOrder.adminNotes },
+      after: { status: updatedOrder.status, adminNotes: updatedOrder.adminNotes }
+    })
 
     // ── Trigger email notifications per status ──────────────────────────
     const items = await db.select().from(orderItems).where(eq(orderItems.orderId, id))

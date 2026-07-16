@@ -2,6 +2,7 @@ import { db } from '../../../db'
 import { admins } from '../../../db/schema'
 import { hashPassword } from '../../../utils/password'
 import { z } from 'zod'
+import { logAdminAction } from '../../../utils/logger'
 
 const createUserSchema = z.object({
   username: z.string().min(3).max(255),
@@ -29,6 +30,8 @@ export default defineEventHandler(async (event) => {
       role: admins.role,
       createdAt: admins.createdAt
     })
+
+    logAdminAction(event, 'CREATE', 'USER', newUser.id, { after: newUser })
 
     return newUser
   } catch (error: any) {

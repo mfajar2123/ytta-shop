@@ -3,6 +3,7 @@ import { admins } from '../../../db/schema'
 import { eq } from 'drizzle-orm'
 import { hashPassword } from '../../../utils/password'
 import { z } from 'zod'
+import { logAdminAction } from '../../../utils/logger'
 
 const updateUserSchema = z.object({
   username: z.string().min(3).max(255).optional(),
@@ -18,6 +19,11 @@ export default defineEventHandler(async (event) => {
 
     const body = await readBody(event)
     const data = updateUserSchema.parse(body)
+
+    const [oldUser] = await db.select().from(admins).where(eq(admins.id, id))
+    if (!oldUser) {
+      throw createError({ statusCode: 404, message: 'User not found' })
+    }
 
     const updateData: any = {}
     if (data.username) updateData.username = data.username
@@ -47,6 +53,11 @@ export default defineEventHandler(async (event) => {
     if (!updatedUser) {
       throw createError({ statusCode: 404, message: 'User not found' })
     }
+
+    logAdminAction(event, 'UPDATE', 'USER', id, {
+      before: { username: oldUser.username, fullName: oldUser.fullName, role: oldUser.role },
+      after: { username: updatedUser.username, fullName: updatedUser.fullName, role: updatedUser.role }
+    })
 
     return updatedUser
   } catch (error: any) {

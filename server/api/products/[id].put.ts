@@ -2,6 +2,7 @@ import { db } from '../../db'
 import { products } from '../../db/schema'
 import { eq } from 'drizzle-orm'
 import { updateProductSchema } from '../../utils/validation'
+import { logAdminAction } from '../../utils/logger'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -11,6 +12,11 @@ export default defineEventHandler(async (event) => {
     const body = await readBody(event)
     const data = updateProductSchema.parse(body)
 
+    const [oldProduct] = await db.select().from(products).where(eq(products.id, id))
+    if (!oldProduct) {
+      throw createError({ statusCode: 404, message: 'Product not found' })
+    }
+
     const [updatedProduct] = await db.update(products)
       .set({ ...data, updatedAt: new Date() })
       .where(eq(products.id, id))
@@ -19,6 +25,11 @@ export default defineEventHandler(async (event) => {
     if (!updatedProduct) {
       throw createError({ statusCode: 404, message: 'Product not found' })
     }
+
+    logAdminAction(event, 'UPDATE', 'PRODUCT', id.toString(), {
+      before: oldProduct,
+      after: updatedProduct
+    })
 
     return updatedProduct
   } catch (error: any) {

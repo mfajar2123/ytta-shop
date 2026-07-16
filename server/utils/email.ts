@@ -58,7 +58,7 @@ const proformaTemplate = `
       <div class="highlight-box">
         <h3>Total Amount to Transfer</h3>
         <div class="amount"><%= new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(order.total) %></div>
-        <p style="margin: 0;"><strong>Bank BCA:</strong> 1234567890<br/><strong>Name:</strong> PT Imani Prima</p>
+        <p style="margin: 0;"><strong>Bank <%= settings.bank_name %>:</strong> <%= settings.bank_account %><br/><strong>Name:</strong> <%= settings.bank_owner %></p>
         <p style="font-size: 12px; color: #86868B; margin-top: 12px;">* This total includes a unique code to help us verify your payment automatically.</p>
       </div>
 
@@ -164,8 +164,19 @@ const cancelledTemplate = `
 `
 
 export const sendOrderPlacedEmail = async (order: any, items: any[], pdfBuffer: Buffer) => {
+  const { db } = await import('../db')
+  const { systemSettings } = await import('../db/schema')
+  const settings = await db.select().from(systemSettings)
+  const settingsMap = settings.reduce((acc: any, curr) => { acc[curr.key] = curr.value; return acc }, {})
+  
+  const publicSettings = {
+    bank_name: settingsMap.bank_name || 'BCA',
+    bank_account: settingsMap.bank_account || '1234567890',
+    bank_owner: settingsMap.bank_owner || 'PT Imani Prima'
+  }
+
   const tplPath = ensureTemplate('proforma.ejs', proformaTemplate)
-  const html = await ejs.renderFile(tplPath, { order })
+  const html = await ejs.renderFile(tplPath, { order, settings: publicSettings })
 
   await getTransporter().sendMail({
     from: '"Imani Shop" <mfajar212345@gmail.com>',

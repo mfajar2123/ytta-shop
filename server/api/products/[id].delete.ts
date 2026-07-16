@@ -1,6 +1,7 @@
 import { db } from '../../db'
 import { products } from '../../db/schema'
 import { eq } from 'drizzle-orm'
+import { logAdminAction } from '../../utils/logger'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -16,6 +17,8 @@ export default defineEventHandler(async (event) => {
     if (!deletedProduct) {
       throw createError({ statusCode: 404, message: 'Product not found' })
     }
+
+    logAdminAction(event, 'DELETE', 'PRODUCT', id.toString(), { before: deletedProduct })
 
     return { message: 'Product deleted successfully' }
   } catch (error) {

@@ -1,6 +1,7 @@
 import { db } from '../../db'
 import { products } from '../../db/schema'
 import { createProductSchema } from '../../utils/validation'
+import { logAdminAction } from '../../utils/logger'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -15,6 +16,8 @@ export default defineEventHandler(async (event) => {
       ...data,
       slug
     }).returning()
+
+    logAdminAction(event, 'CREATE', 'PRODUCT', newProduct.id.toString(), { after: newProduct })
 
     return newProduct
   } catch (error: any) {

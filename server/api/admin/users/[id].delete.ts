@@ -1,6 +1,7 @@
 import { db } from '../../../db'
 import { admins } from '../../../db/schema'
 import { eq } from 'drizzle-orm'
+import { logAdminAction } from '../../../utils/logger'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -14,6 +15,11 @@ export default defineEventHandler(async (event) => {
       throw createError({ statusCode: 403, message: 'You cannot delete your own account' })
     }
 
+    const [oldUser] = await db.select().from(admins).where(eq(admins.id, id))
+    if (!oldUser) {
+      throw createError({ statusCode: 404, message: 'User not found' })
+    }
+
     const [deletedUser] = await db.delete(admins)
       .where(eq(admins.id, id))
       .returning({ id: admins.id })
@@ -21,6 +27,10 @@ export default defineEventHandler(async (event) => {
     if (!deletedUser) {
       throw createError({ statusCode: 404, message: 'User not found' })
     }
+
+    logAdminAction(event, 'DELETE', 'USER', id, {
+      before: { username: oldUser.username, fullName: oldUser.fullName, role: oldUser.role }
+    })
 
     return { message: 'User deleted successfully' }
   } catch (error: any) {

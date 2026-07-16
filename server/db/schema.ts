@@ -1,4 +1,4 @@
-import { pgTable, serial, uuid, varchar, text, integer, boolean, timestamp, jsonb, pgEnum } from 'drizzle-orm/pg-core'
+import { pgTable, serial, uuid, varchar, text, integer, boolean, timestamp, jsonb, pgEnum, index } from 'drizzle-orm/pg-core'
 import { relations } from 'drizzle-orm'
 
 // ─── Enums ───────────────────────────────────────────────────────────────────
@@ -78,6 +78,37 @@ export const orderItems = pgTable('order_items', {
   lineTotal: integer('line_total').notNull()
 })
 
+// ─── Admin Logs ──────────────────────────────────────────────────────────────
+
+export const adminLogs = pgTable('admin_logs', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  adminId: uuid('admin_id').references(() => admins.id),
+  action: varchar('action', { length: 100 }).notNull(),
+  entity: varchar('entity', { length: 100 }).notNull(),
+  entityId: varchar('entity_id', { length: 255 }),
+  details: jsonb('details'),
+  ipAddress: varchar('ip_address', { length: 45 }),
+  userAgent: text('user_agent'),
+  status: varchar('status', { length: 20 }).notNull().default('SUCCESS'),
+  createdAt: timestamp('created_at').defaultNow().notNull()
+}, (table) => {
+  return {
+    adminIdCreatedAtIdx: index('admin_logs_admin_id_created_at_idx').on(table.adminId, table.createdAt),
+    entityEntityIdIdx: index('admin_logs_entity_entity_id_idx').on(table.entity, table.entityId),
+    createdAtIdx: index('admin_logs_created_at_idx').on(table.createdAt)
+  }
+})
+
+// ─── System Settings ─────────────────────────────────────────────────────────
+
+export const systemSettings = pgTable('system_settings', {
+  key: varchar('key', { length: 255 }).primaryKey(),
+  value: jsonb('value').notNull(),
+  description: text('description'),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  updatedBy: uuid('updated_by').references(() => admins.id)
+})
+
 // ─── Relations ───────────────────────────────────────────────────────────────
 
 export const ordersRelations = relations(orders, ({ many, one }) => ({
@@ -99,6 +130,13 @@ export const orderItemsRelations = relations(orderItems, ({ one }) => ({
   })
 }))
 
+export const adminLogsRelations = relations(adminLogs, ({ one }) => ({
+  admin: one(admins, {
+    fields: [adminLogs.adminId],
+    references: [admins.id]
+  })
+}))
+
 // ─── Type Exports ────────────────────────────────────────────────────────────
 
 export type Admin = typeof admins.$inferSelect
@@ -109,3 +147,7 @@ export type Order = typeof orders.$inferSelect
 export type NewOrder = typeof orders.$inferInsert
 export type OrderItem = typeof orderItems.$inferSelect
 export type NewOrderItem = typeof orderItems.$inferInsert
+export type AdminLog = typeof adminLogs.$inferSelect
+export type NewAdminLog = typeof adminLogs.$inferInsert
+export type SystemSetting = typeof systemSettings.$inferSelect
+export type NewSystemSetting = typeof systemSettings.$inferInsert

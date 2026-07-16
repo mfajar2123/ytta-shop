@@ -12,7 +12,9 @@ export default defineEventHandler((event) => {
     '/api/upload',
     '/api/auth/me',
     '/api/dashboard',
-    '/api/admin/users'
+    '/api/admin/users',
+    '/api/admin/logs',
+    '/api/admin/settings'
   ]
 
   const isProtected = protectedRoutes.some(route => cleanPath.startsWith(route))
@@ -45,6 +47,13 @@ export default defineEventHandler((event) => {
     if (cleanPath.startsWith('/api/admin/users') && ['POST', 'PUT', 'DELETE'].includes(event.method)) {
       if (decoded.role !== 'superadmin') {
         throw createError({ statusCode: 403, message: 'Forbidden: Only Super Admin can perform this action' })
+      }
+    }
+
+    // RBAC: Only superadmin can access logs and settings
+    if (cleanPath.startsWith('/api/admin/logs') || cleanPath.startsWith('/api/admin/settings')) {
+      if (decoded.role !== 'superadmin') {
+        throw createError({ statusCode: 403, message: 'Forbidden: Super Admin access required' })
       }
     }
   }

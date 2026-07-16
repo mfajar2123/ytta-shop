@@ -34,9 +34,14 @@
 
     <div class="bg-apple-offwhite rounded-xl p-5 mb-8 border border-apple-lightgray">
       <h4 class="text-apple-black font-bold text-sm mb-3">Bank Transfer Payment</h4>
-      <div class="text-apple-gray text-xs leading-relaxed space-y-2">
+      <div class="text-apple-gray text-xs leading-relaxed space-y-2 mb-4">
         <p><strong class="text-apple-black">1.</strong> Make your payment directly into our bank account. Please clear the exact specified amount. Your order will not be shipped until the funds have cleared in our account.</p>
         <p><strong class="text-apple-black">2.</strong> Price excludes shipping. Shipping costs will be paid directly (COD) when the item arrives.</p>
+      </div>
+      <div v-if="settings" class="bg-white border border-apple-lightgray p-3 rounded-lg flex flex-col space-y-1">
+        <span class="text-xs text-apple-gray">Transfer to:</span>
+        <span class="font-bold text-apple-black">{{ settings.bank_name }} - {{ settings.bank_account }}</span>
+        <span class="text-sm text-apple-gray font-medium">a.n. {{ settings.bank_owner }}</span>
       </div>
     </div>
 
@@ -64,6 +69,8 @@ const router = useRouter()
 const { cartItems, subtotal, formatCurrency } = useCart()
 const { isValid } = useCheckout()
 const isProcessing = ref(false)
+
+const { data: settings } = await useFetch<any>('/api/settings/public')
 
 const handleOrder = async () => {
   if (isProcessing.value) return;

@@ -4,6 +4,7 @@ import { eq } from 'drizzle-orm'
 import { comparePassword } from '../../utils/password'
 import { signToken } from '../../utils/jwt'
 import { z } from 'zod'
+import { logAdminAction } from '../../utils/logger'
 
 const loginSchema = z.object({
   username: z.string().min(3),
@@ -39,11 +40,13 @@ export default defineEventHandler(async (event) => {
     const [admin] = await db.select().from(admins).where(eq(admins.username, username))
 
     if (!admin) {
+      logAdminAction(event, 'LOGIN', 'AUTH', null, { attemptedUsername: username }, 'FAILED')
       throw createError({ statusCode: 401, message: 'Invalid credentials' })
     }
 
     const isValid = await comparePassword(password, admin.passwordHash)
     if (!isValid) {
+      logAdminAction(event, 'LOGIN', 'AUTH', admin.id, { attemptedUsername: username }, 'FAILED', admin.id)
       throw createError({ statusCode: 401, message: 'Invalid credentials' })
     }
 
@@ -63,6 +66,9 @@ export default defineEventHandler(async (event) => {
 
     // Reset rate limiter on successful login
     rateLimit.delete(ip)
+
+    // Audit Trail
+    logAdminAction(event, 'LOGIN', 'AUTH', admin.id, null, 'SUCCESS', admin.id)
 
     return {
       message: 'Logged in successfully',

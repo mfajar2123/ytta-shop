@@ -5,7 +5,9 @@ import {
   ShoppingBagIcon,
   InboxStackIcon,
   UserGroupIcon,
-  ArrowRightOnRectangleIcon
+  ArrowRightOnRectangleIcon,
+  Cog6ToothIcon,
+  ClipboardDocumentListIcon
 } from '@heroicons/vue/24/outline'
 
 const route = useRoute()
@@ -20,6 +22,8 @@ const menu = computed(() => {
   ]
   if (user.value?.role === 'superadmin') {
     items.push({ name: 'User Management', path: '/admin/users', icon: UserGroupIcon })
+    items.push({ name: 'Activity Logs', path: '/admin/logs', icon: ClipboardDocumentListIcon })
+    items.push({ name: 'System Settings', path: '/admin/settings', icon: Cog6ToothIcon })
   }
   return items
 })
