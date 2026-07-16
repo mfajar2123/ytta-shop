@@ -12,7 +12,7 @@ const getExpiry = (): string => {
 
 export interface JwtPayload {
   sub: string       // admin UUID
-  email: string
+  username: string
   role: string
   fullName: string
 }

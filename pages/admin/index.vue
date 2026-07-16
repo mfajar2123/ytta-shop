@@ -13,6 +13,8 @@ definePageMeta({
   middleware: 'admin-auth'
 })
 
+const { user } = useAdminAuth()
+
 const { data: statsData, pending, error } = await useFetch<any>('/api/dashboard/stats')
 
 watch(error, (newError) => {
@@ -56,8 +58,32 @@ const stats = computed(() => {
 </script>
 
 <template>
-  <div class="space-y-8 pb-12">
-    <div>
+  <div class="space-y-8 pb-12 animate-fade-in">
+    <!-- Welcome Banner -->
+    <div v-if="user" class="bg-gradient-to-r from-apple-blue to-blue-600 rounded-3xl p-8 text-white shadow-lg shadow-apple-blue/20 flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden">
+      <!-- Decorative background elements -->
+      <div class="absolute -top-10 -right-10 w-40 h-40 bg-white opacity-10 rounded-full blur-2xl"></div>
+      <div class="absolute -bottom-10 right-20 w-32 h-32 bg-white opacity-10 rounded-full blur-xl"></div>
+      
+      <div class="z-10 relative">
+        <h1 class="text-3xl font-bold tracking-tight mb-2">Hello, {{ user.fullName || user.username }}! 👋</h1>
+        <p class="text-blue-100 text-sm md:text-base font-medium max-w-xl leading-relaxed">
+          Welcome back to your Imani Admin Dashboard. Here's a quick overview of what's happening with your store today.
+        </p>
+      </div>
+      
+      <div class="hidden md:flex z-10 shrink-0 bg-white/20 backdrop-blur-sm px-6 py-4 rounded-2xl border border-white/20 items-center gap-4">
+        <div class="w-12 h-12 bg-white text-apple-blue rounded-xl flex items-center justify-center font-bold text-xl shadow-sm">
+          {{ user.fullName ? user.fullName.charAt(0).toUpperCase() : 'A' }}
+        </div>
+        <div>
+          <p class="text-xs text-blue-100 font-bold uppercase tracking-wider">{{ user.role === 'superadmin' ? 'Super Admin' : 'Admin' }}</p>
+          <p class="font-bold text-white">{{ user.username }}</p>
+        </div>
+      </div>
+    </div>
+
+    <div v-else>
       <h2 class="text-2xl font-bold text-apple-black">Overview</h2>
       <p class="text-gray-500 mt-1">Here's what's happening with your store today.</p>
     </div>

@@ -3,7 +3,7 @@ import { relations } from 'drizzle-orm'
 
 // ─── Enums ───────────────────────────────────────────────────────────────────
 
-export const adminRoleEnum = pgEnum('admin_role', ['helpdesk', 'superadmin'])
+export const adminRoleEnum = pgEnum('admin_role', ['admin', 'superadmin'])
 
 export const orderStatusEnum = pgEnum('order_status', [
   'pending_payment',
@@ -18,10 +18,10 @@ export const orderStatusEnum = pgEnum('order_status', [
 
 export const admins = pgTable('admins', {
   id: uuid('id').defaultRandom().primaryKey(),
-  email: varchar('email', { length: 255 }).notNull().unique(),
+  username: varchar('username', { length: 255 }).notNull().unique(),
   passwordHash: varchar('password_hash', { length: 255 }).notNull(),
   fullName: varchar('full_name', { length: 255 }).notNull(),
-  role: adminRoleEnum('role').notNull().default('helpdesk'),
+  role: adminRoleEnum('role').notNull().default('admin'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull()
 })

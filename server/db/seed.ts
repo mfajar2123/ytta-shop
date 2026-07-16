@@ -10,12 +10,20 @@ async function main() {
     console.log('Seeding admin...')
     const hashedPassword = await hashPassword('ImaniPrima2026!')
     
-    await db.insert(admins).values({
-      email: 'helpdesk@imaniprima.co.id',
-      passwordHash: hashedPassword,
-      fullName: 'Helpdesk Admin',
-      role: 'helpdesk'
-    }).onConflictDoNothing()
+    await db.insert(admins).values([
+      {
+        username: 'admin',
+        passwordHash: hashedPassword,
+        fullName: 'Super Admin',
+        role: 'superadmin'
+      },
+      {
+        username: 'admin_staff',
+        passwordHash: hashedPassword,
+        fullName: 'Admin Staff',
+        role: 'admin'
+      }
+    ]).onConflictDoNothing()
 
     // 2. Seed Products
     console.log('Seeding products...')

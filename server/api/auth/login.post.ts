@@ -6,7 +6,7 @@ import { signToken } from '../../utils/jwt'
 import { z } from 'zod'
 
 const loginSchema = z.object({
-  email: z.string().email(),
+  username: z.string().min(3),
   password: z.string().min(6),
   rememberMe: z.boolean().optional()
 })
@@ -34,9 +34,9 @@ export default defineEventHandler(async (event) => {
     // ─────────────────────────────────────────────────────────────────
 
     const body = await readBody(event)
-    const { email, password, rememberMe } = loginSchema.parse(body)
+    const { username, password, rememberMe } = loginSchema.parse(body)
 
-    const [admin] = await db.select().from(admins).where(eq(admins.email, email))
+    const [admin] = await db.select().from(admins).where(eq(admins.username, username))
 
     if (!admin) {
       throw createError({ statusCode: 401, message: 'Invalid credentials' })
@@ -49,16 +49,16 @@ export default defineEventHandler(async (event) => {
 
     const token = signToken({
       sub: admin.id,
-      email: admin.email,
+      username: admin.username,
       role: admin.role,
       fullName: admin.fullName
-    }, rememberMe ? '7d' : '8h') // Passing expiry to signToken, so we need to update utils/jwt.ts too!
+    }, rememberMe ? '3d' : '8h') // Passing expiry to signToken, so we need to update utils/jwt.ts too!
 
     setCookie(event, 'admin_token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
-      maxAge: rememberMe ? 7 * 24 * 60 * 60 : 8 * 60 * 60 // 7 days or 8 hours
+      maxAge: rememberMe ? 3 * 24 * 60 * 60 : 8 * 60 * 60 // 3 days or 8 hours
     })
 
     // Reset rate limiter on successful login
@@ -68,7 +68,7 @@ export default defineEventHandler(async (event) => {
       message: 'Logged in successfully',
       user: {
         id: admin.id,
-        email: admin.email,
+        username: admin.username,
         fullName: admin.fullName,
         role: admin.role
       }

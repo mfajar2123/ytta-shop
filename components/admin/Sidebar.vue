@@ -4,6 +4,7 @@ import {
   HomeIcon,
   ShoppingBagIcon,
   InboxStackIcon,
+  UserGroupIcon,
   ArrowRightOnRectangleIcon
 } from '@heroicons/vue/24/outline'
 
@@ -11,11 +12,17 @@ const route = useRoute()
 const { user } = useAdminAuth()
 const isOpen = useState('isSidebarOpen', () => false)
 
-const menu = [
-  { name: 'Dashboard', path: '/admin', icon: HomeIcon },
-  { name: 'Products', path: '/admin/products', icon: ShoppingBagIcon },
-  { name: 'Orders', path: '/admin/orders', icon: InboxStackIcon }
-]
+const menu = computed(() => {
+  const items = [
+    { name: 'Dashboard', path: '/admin', icon: HomeIcon },
+    { name: 'Products', path: '/admin/products', icon: ShoppingBagIcon },
+    { name: 'Orders', path: '/admin/orders', icon: InboxStackIcon }
+  ]
+  if (user.value?.role === 'superadmin') {
+    items.push({ name: 'User Management', path: '/admin/users', icon: UserGroupIcon })
+  }
+  return items
+})
 
 const handleLogout = async () => {
   await $fetch('/api/auth/logout', { method: 'POST' })

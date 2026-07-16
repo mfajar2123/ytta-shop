@@ -11,7 +11,8 @@ export default defineEventHandler((event) => {
     '/api/orders', // GET (list) needs auth, POST (create) is public
     '/api/upload',
     '/api/auth/me',
-    '/api/dashboard'
+    '/api/dashboard',
+    '/api/admin/users'
   ]
 
   const isProtected = protectedRoutes.some(route => cleanPath.startsWith(route))
@@ -39,5 +40,12 @@ export default defineEventHandler((event) => {
 
     // Attach user to event context
     event.context.user = decoded
+
+    // RBAC: Only superadmin can modify users (POST, PUT, DELETE /api/admin/users)
+    if (cleanPath.startsWith('/api/admin/users') && ['POST', 'PUT', 'DELETE'].includes(event.method)) {
+      if (decoded.role !== 'superadmin') {
+        throw createError({ statusCode: 403, message: 'Forbidden: Only Super Admin can perform this action' })
+      }
+    }
   }
 })
