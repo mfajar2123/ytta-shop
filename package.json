@@ -1,5 +1,5 @@
 {
-  "name": "antigravity",
+  "name": "imani-prima-shop",
   "private": true,
   "type": "module",
   "scripts": {
@@ -7,20 +7,55 @@
     "dev": "nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare"
+    "postinstall": "nuxt prepare",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio",
+    "db:seed": "npx tsx --env-file=.env server/db/seed.ts"
   },
   "dependencies": {
+    "@heroicons/vue": "^2.2.0",
+    "bcrypt": "^6.0.0",
+    "drizzle-orm": "^0.45.2",
+    "ejs": "^6.0.1",
+    "handlebars": "^4.7.9",
+    "jsonwebtoken": "^9.0.3",
+    "jspdf": "^4.2.1",
+    "nodemailer": "^9.0.3",
     "nuxt": "^3.11.2",
+    "pdfkit": "^0.19.1",
+    "pg": "^8.22.0",
     "sweetalert2": "^11.26.24",
     "vue": "^3.4.21",
-    "vue-router": "^4.3.0"
+    "vue-router": "^4.3.0",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@nuxt/image": "^2.0.0",
     "@nuxtjs/google-fonts": "^3.2.0",
     "@nuxtjs/tailwindcss": "^6.11.4",
+    "@types/bcrypt": "^5.0.2",
+    "@types/ejs": "^3.1.5",
+    "@types/jsonwebtoken": "^9.0.9",
+    "@types/nodemailer": "^6.4.17",
+    "@types/pdfkit": "^0.17.6",
+    "@types/pg": "^8.15.4",
     "autoprefixer": "^10.4.19",
+    "drizzle-kit": "^0.31.3",
     "postcss": "^8.4.38",
-    "tailwindcss": "^3.4.3"
+    "tailwindcss": "^3.4.3",
+    "tsx": "^4.19.4"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "bcrypt"
+    ],
+    "ignoredBuiltDependencies": [
+      "@parcel/watcher",
+      "core-js",
+      "esbuild",
+      "sharp"
+    ]
   }
 }

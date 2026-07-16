@@ -1,0 +1,28 @@
+
+<!DOCTYPE html>
+<html>
+<head><style>${baseStyles}</style></head>
+<body>
+  <div class="wrapper">
+    <div class="header" style="background-color: #EF4444;">
+      <h2 style="color: rgba(255,255,255,0.7);">Imani Prima Shop</h2>
+      <h1>Order Cancelled</h1>
+    </div>
+    <div class="content">
+      <p>Dear <strong><%= order.billingDetails.fullName %></strong>,</p>
+      <p>Your order <strong><%= order.invoiceNumber %></strong> has been cancelled.</p>
+      <p>If this was done in error or if you have any questions, please contact our helpdesk.</p>
+      
+      <div class="highlight-box" style="border-left: 4px solid #EF4444;">
+        <p style="margin:0;">No charges have been applied, or if you already paid, please reply to this email for assistance.</p>
+      </div>
+      
+      <p>Thank you for your understanding.</p>
+    </div>
+    <div class="footer">
+      &copy; <%= new Date().getFullYear() %> PT Imani Prima. All rights reserved.<br/>
+      Graha STR, 2nd Floor, Jalan Ampera Raya No.11, Jakarta Selatan
+    </div>
+  </div>
+</body>
+</html>

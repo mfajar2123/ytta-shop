@@ -2,6 +2,17 @@
 export default defineNuxtConfig({
   compatibilityDate: '2026-07-14',
   devtools: { enabled: true },
+  runtimeConfig: {
+    jwtSecret: process.env.JWT_SECRET,
+    jwtExpiry: process.env.JWT_EXPIRY,
+    smtpHost: process.env.SMTP_HOST,
+    smtpPort: process.env.SMTP_PORT,
+    smtpUser: process.env.SMTP_USER,
+    smtpPass: process.env.SMTP_PASS,
+    public: {
+      appUrl: process.env.APP_URL
+    }
+  },
   modules: [
     '@nuxtjs/tailwindcss',
     '@nuxt/image',

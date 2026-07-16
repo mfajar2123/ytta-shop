@@ -1,0 +1,31 @@
+
+<!DOCTYPE html>
+<html>
+<head><style>${baseStyles}</style></head>
+<body>
+  <div class="wrapper">
+    <div class="header">
+      <h2>Imani Prima Shop</h2>
+      <h1>Order Placed</h1>
+    </div>
+    <div class="content">
+      <p>Dear <strong><%= order.billingDetails.fullName %></strong>,</p>
+      <p>Thank you for your order! Your invoice number is <strong><%= order.invoiceNumber %></strong>.</p>
+      <p>We have attached your Proforma Invoice to this email. Please review the details carefully.</p>
+      
+      <div class="highlight-box">
+        <h3>Total Amount to Transfer</h3>
+        <div class="amount"><%= new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(order.total) %></div>
+        <p style="margin: 0;"><strong>Bank BCA:</strong> 1234567890<br/><strong>Name:</strong> PT Imani Prima</p>
+        <p style="font-size: 12px; color: #86868B; margin-top: 12px;">* This total includes a unique code to help us verify your payment automatically.</p>
+      </div>
+
+      <p>If you have already paid, you can send the payment proof to our helpdesk or simply wait for our automatic verification.</p>
+    </div>
+    <div class="footer">
+      &copy; <%= new Date().getFullYear() %> PT Imani Prima. All rights reserved.<br/>
+      Graha STR, 2nd Floor, Jalan Ampera Raya No.11, Jakarta Selatan
+    </div>
+  </div>
+</body>
+</html>

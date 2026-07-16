@@ -4,6 +4,15 @@
 .output
 dist
 
+# Docker
+pgdata/
+
+# Uploads (user-generated content)
+public/uploads/
+
+# Environment variables (already below but reinforcing)
+.env
+
 # Node dependencies
 node_modules
 .npm

@@ -44,28 +44,30 @@
       Your personal data will be used to process your order, support your experience throughout this website, and for other purposes described in our <a href="#" class="text-apple-blue hover:underline">privacy policy</a>.
     </p>
 
-    <button @click="handleOrder" class="w-full py-4 rounded-xl bg-apple-blue hover:bg-apple-bluehover text-apple-white font-bold transition-colors shadow-md flex justify-center items-center gap-2 group">
-      Place Order
-      <svg class="w-5 h-5 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+    <button @click="handleOrder" :disabled="isProcessing" class="w-full py-4 rounded-xl bg-apple-blue hover:bg-apple-bluehover text-apple-white font-bold transition-colors shadow-md flex justify-center items-center gap-2 group disabled:opacity-70 disabled:cursor-not-allowed">
+      <span v-if="isProcessing">Processing...</span>
+      <span v-else>Place Order</span>
+      <svg v-if="!isProcessing" class="w-5 h-5 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+      <svg v-else class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+      </svg>
     </button>
 
-    <!-- Invoice Modal -->
-    <Teleport to="body">
-      <InvoiceModal v-if="showInvoice" @close="showInvoice = false" />
-    </Teleport>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import InvoiceModal from '~/components/checkout/InvoiceModal.vue'
 import Swal from 'sweetalert2'
 
+const router = useRouter()
 const { cartItems, subtotal, formatCurrency } = useCart()
 const { isValid } = useCheckout()
-const showInvoice = ref(false)
+const isProcessing = ref(false)
 
-const handleOrder = () => {
+const handleOrder = async () => {
+  if (isProcessing.value) return;
+
   if (cartItems.value.length === 0) {
     Swal.fire({
       title: 'Cart Empty',
@@ -89,7 +91,73 @@ const handleOrder = () => {
     })
     return
   }
+  const confirm = await Swal.fire({
+    title: 'Confirm Order',
+    text: 'Are you sure you want to place this order?',
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonColor: '#0071E3',
+    background: '#FFFFFF',
+    color: '#1D1D1F'
+  })
   
-  showInvoice.value = true
+  if (!confirm.isConfirmed) return
+
+  isProcessing.value = true
+
+  try {
+    const { billingDetails } = useCheckout()
+    const b = billingDetails.value
+    
+    // Prepare payload
+    const payload = {
+      billingDetails: {
+        fullName: b.fullName,
+        phone: b.phone,
+        address: b.address,
+        npwp: b.npwp || '',
+        nik: b.nik || '',
+        email: b.email
+      },
+      vesselDetails: b.vesselName ? {
+        vesselName: b.vesselName,
+        vesselId: b.vesselId || '',
+        serialNumber: '',
+        transmitterId: ''
+      } : undefined,
+      items: cartItems.value.map((item: any) => ({
+        productId: item.id,
+        quantity: item.quantity,
+      }))
+    }
+
+    const res = await $fetch<any>('/api/orders', {
+      method: 'POST',
+      body: payload
+    })
+
+    await Swal.fire({
+      icon: 'success',
+      title: 'Order Placed!',
+      html: `Your order has been placed successfully.<br>Invoice Number: <strong>${res.order.invoiceNumber}</strong><br><br>Please check your email for the proforma invoice and payment instructions.`,
+      confirmButtonColor: '#0071E3',
+      background: '#FFFFFF',
+      color: '#1D1D1F'
+    })
+
+    // Clear cart and redirect to shop
+    cartItems.value = []
+    router.push('/shop')
+
+  } catch (error: any) {
+    Swal.fire({
+      icon: 'error',
+      title: 'Order Failed',
+      text: error.data?.message || 'Failed to place order. Please try again.',
+      confirmButtonColor: '#ef4444'
+    })
+  } finally {
+    isProcessing.value = false
+  }
 }
 </script>

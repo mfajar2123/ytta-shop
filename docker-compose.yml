@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: imani_shop_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: imani_shop
+      POSTGRES_USER: imani_admin
+      POSTGRES_PASSWORD: ImaniPrima2026!
+    ports:
+      - '5433:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:

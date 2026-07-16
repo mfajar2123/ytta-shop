@@ -72,35 +72,51 @@ definePageMeta({
 
 const sortBy = ref('default')
 
-const products = [
+// Fetch products from API with graceful fallback to hardcoded data if API fails or empty
+const { data: apiProducts, pending } = await useFetch('/api/products')
+
+const fallbackProducts = [
   {
     id: 1,
     name: 'Orbcomm SC1000',
     category: 'Device Only',
-    price: 'Rp 5.443.000',
     priceValue: 5443000,
+    price: 'Rp 5.443.000',
     imageType: 'device'
   },
   {
     id: 2,
     name: 'Orbcomm SC1000 + Subscription 1 Year',
     category: 'Bundle Package',
-    price: 'Rp 9.943.000',
     priceValue: 9943000,
+    price: 'Rp 9.943.000',
     imageType: 'bundle'
   },
   {
     id: 3,
     name: 'Subscription 1 Year',
     category: 'Subscription Only',
-    price: 'Rp 4.500.000',
     priceValue: 4500000,
+    price: 'Rp 4.500.000',
     imageType: 'sub'
   }
 ]
 
+// Normalize API products to match component expectations
+const products = computed(() => {
+  if (apiProducts.value && (apiProducts.value as any[]).length > 0) {
+    return (apiProducts.value as any[]).map(p => ({
+      ...p,
+      priceValue: p.price,
+      // Format price string for compatibility with existing UI
+      price: new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(p.price)
+    }))
+  }
+  return fallbackProducts
+})
+
 const sortedProducts = computed(() => {
-  const arr = [...products]
+  const arr = [...products.value]
   if (sortBy.value === 'asc') {
     arr.sort((a, b) => a.priceValue - b.priceValue)
   } else if (sortBy.value === 'desc') {

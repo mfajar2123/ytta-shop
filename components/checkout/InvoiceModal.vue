@@ -163,18 +163,20 @@
 
         <!-- Totals -->
         <div class="flex justify-end mb-16">
-          <table class="w-72 text-sm text-apple-black">
-            <tbody>
-              <tr class="border-b border-apple-lightgray">
-                <td class="py-2 font-bold text-apple-gray">Subtotal</td>
-                <td class="py-2 text-right font-bold">{{ formatCurrency(subtotal) }}</td>
-              </tr>
-              <tr>
-                <td class="py-3 font-bold text-lg">Total</td>
-                <td class="py-3 text-right font-black text-lg text-apple-blue">{{ formatCurrency(subtotal) }}</td>
-              </tr>
-            </tbody>
-          </table>
+          <div class="space-y-2 mt-4 text-sm font-medium w-72">
+            <div class="flex justify-between text-apple-gray">
+              <span>Subtotal</span>
+              <span>{{ formatCurrency(subtotal) }}</span>
+            </div>
+            <div class="flex justify-between text-apple-gray">
+              <span>Unique Payment Code</span>
+              <span>{{ formatCurrency(uniqueCode) }}</span>
+            </div>
+            <div class="flex justify-between text-lg font-bold text-apple-black pt-2 border-t border-apple-lightgray">
+              <span>Total</span>
+              <span class="text-apple-blue">{{ formatCurrency(finalTotal) }}</span>
+            </div>
+          </div>
         </div>
 
         <!-- Footer -->
@@ -191,7 +193,11 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 
-defineEmits(['close'])
+const props = defineProps<{
+  order?: any
+}>()
+
+const emit = defineEmits(['close'])
 
 const { cartItems, subtotal, formatCurrency, clearCart } = useCart()
 const { billingDetails } = useCheckout()
@@ -201,6 +207,8 @@ const invoiceNumber = ref('')
 const orderDate = ref('')
 const serialNumber = ref('')
 const transmitterId = ref('')
+const uniqueCode = ref(0)
+const finalTotal = ref(0)
 
 const getSku = (id: number) => {
   if (id === 1) return 'OSC1000-DEV'
@@ -231,11 +239,21 @@ const printPDF = () => {
 onMounted(() => {
   document.querySelectorAll('.v-animate').forEach(el => el.classList.add('is-visible'))
   
-  // Initialize dynamic stable values
-  invoiceNumber.value = `INV.${new Date().getFullYear()}.SC.${Math.floor(10000 + Math.random() * 90000)}`
-  
-  const options: Intl.DateTimeFormatOptions = { year: 'numeric', month: 'long', day: 'numeric' }
-  orderDate.value = new Date().toLocaleDateString('en-US', options)
+  // Initialize dynamic stable values using order prop if available
+  if (props.order) {
+    invoiceNumber.value = props.order.invoiceNumber
+    const options: Intl.DateTimeFormatOptions = { year: 'numeric', month: 'long', day: 'numeric' }
+    orderDate.value = new Date(props.order.createdAt).toLocaleDateString('en-US', options)
+    uniqueCode.value = props.order.uniqueCode
+    finalTotal.value = props.order.total
+  } else {
+    // Fallback if no order prop
+    invoiceNumber.value = `INV.${new Date().getFullYear()}.SC.${Math.floor(10000 + Math.random() * 90000)}`
+    const options: Intl.DateTimeFormatOptions = { year: 'numeric', month: 'long', day: 'numeric' }
+    orderDate.value = new Date().toLocaleDateString('en-US', options)
+    uniqueCode.value = 22
+    finalTotal.value = subtotal.value + uniqueCode.value
+  }
   
   serialNumber.value = `KAAB125060${Math.floor(100 + Math.random() * 900)}`
   transmitterId.value = `${Math.floor(1000000 + Math.random() * 9000000)}`

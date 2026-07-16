@@ -1,0 +1,28 @@
+
+<!DOCTYPE html>
+<html>
+<head><style>${baseStyles}</style></head>
+<body>
+  <div class="wrapper">
+    <div class="header" style="background-color: #16A34A;">
+      <h2 style="color: rgba(255,255,255,0.7);">Imani Prima Shop</h2>
+      <h1>Order Completed</h1>
+    </div>
+    <div class="content">
+      <p>Dear <strong><%= order.billingDetails.fullName %></strong>,</p>
+      <p>Your order <strong><%= order.invoiceNumber %></strong> has been fully completed!</p>
+      <p>If you ordered physical devices, they have been handed over to our shipping partners. If you purchased subscriptions, they are now fully active.</p>
+      
+      <div class="highlight-box" style="border-left: 4px solid #16A34A;">
+        <p style="margin:0;">Need help setting up? Check out our online documentation or reply to this email to reach our helpdesk.</p>
+      </div>
+      
+      <p>Thank you for your business. We look forward to serving you again.</p>
+    </div>
+    <div class="footer">
+      &copy; <%= new Date().getFullYear() %> PT Imani Prima. All rights reserved.<br/>
+      Graha STR, 2nd Floor, Jalan Ampera Raya No.11, Jakarta Selatan
+    </div>
+  </div>
+</body>
+</html>
