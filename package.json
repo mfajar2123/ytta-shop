@@ -12,7 +12,8 @@
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
-    "db:seed": "npx tsx --env-file=.env server/db/seed.ts"
+    "db:seed": "npx tsx --env-file=.env server/db/seed.ts",
+    "test": "vitest"
   },
   "dependencies": {
     "@heroicons/vue": "^2.2.0",
@@ -45,11 +46,14 @@
     "@types/nodemailer": "^6.4.17",
     "@types/pdfkit": "^0.17.6",
     "@types/pg": "^8.15.4",
+    "@vue/test-utils": "^2.4.11",
     "autoprefixer": "^10.4.19",
     "drizzle-kit": "^0.31.3",
+    "happy-dom": "^20.11.1",
     "postcss": "^8.4.38",
     "tailwindcss": "^4.3.3",
-    "tsx": "^4.19.4"
+    "tsx": "^4.19.4",
+    "vitest": "^4.1.10"
   },
   "pnpm": {
     "onlyBuiltDependencies": [

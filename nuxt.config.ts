@@ -33,12 +33,26 @@ export default defineNuxtConfig({
     head: {
       title: 'Orbcomm SC1000',
       meta: [
-        { name: 'description', content: 'Orbcomm SC1000 - Satelite Communication Device' }
+        { name: 'description', content: 'Orbcomm SC1000 - Satelite Communication Device' },
+        { name: 'viewport', content: 'width=device-width, initial-scale=1, maximum-scale=1' }
       ]
     },
     pageTransition: { name: 'page', mode: 'out-in' }
   },
   routeRules: {
-    '/admin/**': { ssr: false }
+    // Admin routes bypass SSR
+    '/admin/**': { ssr: false },
+    // Public routes cached for performance (SWR)
+    '/': { swr: 3600 },
+    '/shop': { swr: 3600 },
+    // Global Security Headers
+    '/**': { 
+      headers: { 
+        'X-Content-Type-Options': 'nosniff',
+        'X-Frame-Options': 'DENY',
+        'X-XSS-Protection': '1; mode=block',
+        'Strict-Transport-Security': 'max-age=31536000; includeSubDomains'
+      } 
+    }
   }
 })
