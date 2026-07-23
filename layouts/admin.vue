@@ -13,32 +13,31 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="admin-layout min-h-screen bg-off-white flex">
+  <div class="admin-layout min-h-screen bg-gray-50 dark:bg-gray-950 flex">
     <!-- Admin Sidebar -->
-    <Sidebar v-if="user" />
+    <Sidebar />
 
     <div class="flex-1 flex flex-col min-w-0">
       <!-- Admin Topbar -->
-      <Topbar v-if="user" />
+      <Topbar />
 
       <!-- Main Content -->
-      <main class="flex-1 p-6 lg:p-8 overflow-y-auto">
+      <main class="flex-1 p-4 md:p-8 overflow-y-auto">
         <div v-if="isFetching" class="flex justify-center items-center h-64">
-          <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-apple-blue"></div>
+          <UIcon name="i-heroicons-arrow-path" class="w-12 h-12 text-primary-500 animate-spin" />
         </div>
-        <slot v-else />
+        <div v-else class="max-w-7xl mx-auto w-full">
+          <slot />
+        </div>
       </main>
     </div>
   </div>
 </template>
 
 <style>
-/* High performance mode: Disable all animations/transitions in admin dashboard */
-.admin-layout * {
-  transition: none !important;
-  animation-duration: 0ms !important;
-}
-.admin-layout .animate-spin {
-  /* Keep loading spinners working if necessary, or let them spin fast */
+/* Nuxt UI standard overrides if necessary */
+.admin-layout {
+  /* Provide a smooth transition for background colors when switching color modes */
+  transition: background-color 0.3s ease;
 }
 </style>

@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { useRoute } from 'vue-router'
-import { Bars3Icon, BellIcon } from '@heroicons/vue/24/outline'
 
 const route = useRoute()
 const isOpen = useState('isSidebarOpen', () => false)
@@ -9,11 +8,29 @@ const getPageTitle = () => {
   if (route.path === '/admin') return 'Dashboard'
   if (route.path.startsWith('/admin/products')) return 'Products'
   if (route.path.startsWith('/admin/orders')) return 'Orders'
+  if (route.path.startsWith('/admin/users')) return 'User Management'
+  if (route.path.startsWith('/admin/logs')) return 'Activity Logs'
+  if (route.path.startsWith('/admin/settings')) return 'System Settings'
   return 'Admin Area'
 }
 
 const showNotifications = ref(false)
-const { data: notifications, refresh } = await useFetch<any[]>('/api/admin/notifications')
+const notifications = ref<any[]>([])
+const notificationsError = ref(false)
+
+const fetchNotifications = async () => {
+  try {
+    notifications.value = await $fetch<any[]>('/api/admin/notifications')
+    notificationsError.value = false
+  } catch (e) {
+    notificationsError.value = true
+    notifications.value = []
+  }
+}
+
+onMounted(() => {
+  fetchNotifications()
+})
 
 const lastReadTime = ref(0)
 onMounted(() => {
@@ -25,12 +42,9 @@ const unreadCount = computed(() => {
   return notifications.value.filter(n => new Date(n.time).getTime() > lastReadTime.value).length
 })
 
-const toggleNotifications = () => {
-  showNotifications.value = !showNotifications.value
-  if (showNotifications.value) {
-    lastReadTime.value = Date.now()
-    localStorage.setItem('admin_last_read_notifications', lastReadTime.value.toString())
-  }
+const markAsRead = () => {
+  lastReadTime.value = Date.now()
+  localStorage.setItem('admin_last_read_notifications', lastReadTime.value.toString())
 }
 
 const formatDate = (dateString: string) => {
@@ -42,44 +56,62 @@ const formatDate = (dateString: string) => {
 </script>
 
 <template>
-  <header class="h-16 bg-white border-b border-light-gray flex items-center justify-between px-4 lg:px-8 sticky top-0 z-10">
+  <header class="h-16 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between px-4 lg:px-8 sticky top-0 z-30 shrink-0">
     <div class="flex items-center gap-4">
-      <button @click="isOpen = !isOpen" class="lg:hidden p-2 -ml-2 text-gray-500 hover:bg-off-white rounded-lg transition-colors">
-        <Bars3Icon class="w-6 h-6" />
-      </button>
-      <h1 class="text-lg font-semibold text-apple-black">{{ getPageTitle() }}</h1>
+      <UButton 
+        class="lg:hidden" 
+        icon="i-heroicons-bars-3" 
+        color="neutral" 
+        variant="ghost" 
+        @click="isOpen = !isOpen" 
+      />
+      <h1 class="text-xl font-bold text-gray-900 dark:text-white tracking-tight">{{ getPageTitle() }}</h1>
     </div>
 
-    <div class="flex items-center gap-2 relative">
-      <button @click="toggleNotifications" class="p-2 text-gray-500 hover:bg-off-white rounded-full transition-colors relative">
-        <BellIcon class="w-5 h-5" />
-        <span v-if="unreadCount > 0" class="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"></span>
-      </button>
+    <div class="flex items-center gap-2">
+      <UPopover @update:open="(val: boolean) => { if (val) markAsRead() }">
+        <UButton 
+          icon="i-heroicons-bell" 
+          color="neutral" 
+          variant="ghost"
+          class="relative"
+        >
+          <span v-if="unreadCount > 0" class="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white dark:border-gray-900"></span>
+        </UButton>
 
-      <!-- Dropdown -->
-      <div v-if="showNotifications" class="absolute right-0 top-12 w-80 bg-white border border-gray-100 shadow-xl rounded-2xl overflow-hidden z-50">
-        <div class="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-          <h3 class="font-semibold text-sm text-gray-800">Notifications</h3>
-          <button @click="refresh" class="text-xs text-apple-blue hover:underline">Refresh</button>
-        </div>
-        <div class="max-h-96 overflow-y-auto">
-          <div v-if="!notifications || notifications.length === 0" class="p-8 text-center text-gray-500 text-sm">
-            No new notifications
+        <template #content>
+          <div class="w-80 sm:w-96 overflow-hidden">
+            <div class="p-4 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-gray-50 dark:bg-gray-800/50">
+              <h3 class="font-semibold text-sm text-gray-900 dark:text-white">Notifications</h3>
+              <UButton label="Refresh" color="primary" variant="link" size="xs" @click="fetchNotifications" />
+            </div>
+            
+            <div class="max-h-96 overflow-y-auto">
+              <div v-if="!notifications || notifications.length === 0" class="p-8 text-center text-gray-500 dark:text-gray-400 text-sm">
+                No new notifications
+              </div>
+              <NuxtLink 
+                v-else
+                v-for="notif in notifications" 
+                :key="notif.id" 
+                :to="notif.link"
+                class="block p-4 border-b border-gray-50 dark:border-gray-800/50 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              >
+                <div class="flex items-start gap-3">
+                  <div class="p-2 bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 rounded-lg shrink-0 mt-0.5">
+                    <UIcon name="i-heroicons-information-circle" class="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p class="font-medium text-sm text-gray-900 dark:text-white mb-1">{{ notif.title }}</p>
+                    <p class="text-xs text-gray-600 dark:text-gray-400 mb-2 leading-relaxed">{{ notif.message }}</p>
+                    <p class="text-[10px] text-gray-400 dark:text-gray-500 font-medium">{{ formatDate(notif.time) }}</p>
+                  </div>
+                </div>
+              </NuxtLink>
+            </div>
           </div>
-          <NuxtLink 
-            v-else
-            v-for="notif in notifications" 
-            :key="notif.id" 
-            :to="notif.link"
-            @click="showNotifications = false"
-            class="block p-4 border-b border-gray-50 hover:bg-off-white transition-colors"
-          >
-            <p class="font-medium text-sm text-gray-900 mb-1">{{ notif.title }}</p>
-            <p class="text-xs text-gray-600 mb-2">{{ notif.message }}</p>
-            <p class="text-[10px] text-gray-400">{{ formatDate(notif.time) }}</p>
-          </NuxtLink>
-        </div>
-      </div>
+        </template>
+      </UPopover>
     </div>
   </header>
 </template>

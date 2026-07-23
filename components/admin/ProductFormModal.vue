@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { XMarkIcon, PhotoIcon } from '@heroicons/vue/24/outline'
 import Swal from 'sweetalert2'
 
 const props = defineProps<{
@@ -8,6 +7,13 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits(['close', 'saved'])
+
+const internalIsOpen = computed({
+  get: () => props.isOpen,
+  set: (val) => {
+    if (!val) emit('close')
+  }
+})
 
 const form = reactive({
   name: '',
@@ -113,121 +119,124 @@ const handleSave = async () => {
     isSaving.value = false
   }
 }
+
+const categoryOptions = [
+  { label: 'Hardware', value: 'Hardware' },
+  { label: 'Bundle', value: 'Bundle' },
+  { label: 'Subscription', value: 'Subscription' }
+]
+
+const imageTypeOptions = [
+  { value: 'device', label: 'Device Only' },
+  { value: 'bundle', label: 'Bundle' },
+  { value: 'sub', label: 'Subscription' }
+]
 </script>
 
 <template>
-  <div v-if="isOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4">
-    <!-- Backdrop -->
-    <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" @click="emit('close')"></div>
+  <UModal v-model:open="internalIsOpen">
+    <template #content>
+      <UCard>
+        <template #header>
+          <div class="flex items-center justify-between">
+            <h3 class="text-xl font-bold text-gray-900 dark:text-white">
+              {{ product ? 'Edit Product' : 'Add New Product' }}
+            </h3>
+            <UButton 
+              color="neutral" 
+              variant="ghost" 
+              icon="i-heroicons-x-mark" 
+              class="-my-1" 
+              @click="emit('close')" 
+            />
+          </div>
+        </template>
 
-    <!-- Modal Content -->
-    <div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden animate-fade-in-up">
-      <!-- Header -->
-      <div class="flex items-center justify-between p-6 border-b border-light-gray">
-        <h3 class="text-xl font-bold text-apple-black">
-          {{ product ? 'Edit Product' : 'Add New Product' }}
-        </h3>
-        <button @click="emit('close')" class="p-2 text-gray-500 hover:bg-off-white rounded-full transition-colors">
-          <XMarkIcon class="w-6 h-6" />
-        </button>
-      </div>
+        <!-- Body -->
+        <div class="space-y-6 max-h-[60vh] overflow-y-auto px-2 pb-2">
+          
+          <!-- Image Upload -->
+          <div>
+            <label class="block text-sm font-medium text-gray-900 dark:text-white mb-2">Product Image (600x313 recommended)</label>
+            <div 
+              class="border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-2xl p-4 text-center hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors cursor-pointer group relative overflow-hidden h-48 flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-900/50"
+              @click="triggerFileInput"
+            >
+              <input type="file" ref="fileInput" accept="image/jpeg,image/png,image/webp" class="hidden" @change="handleImageUpload" />
+              
+              <template v-if="previewImage">
+                <img :src="previewImage" class="absolute inset-0 w-full h-full object-cover group-hover:opacity-50 transition-opacity" />
+                <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                  <span class="bg-white/90 dark:bg-black/90 text-gray-900 dark:text-white font-medium px-4 py-2 rounded-lg shadow-sm">Change Image</span>
+                </div>
+              </template>
+              <template v-else>
+                <UIcon name="i-heroicons-photo" class="w-10 h-10 text-gray-400 mb-2" />
+                <p class="text-sm font-medium text-gray-900 dark:text-white">Click to upload image</p>
+                <p class="text-xs text-gray-500 mt-1">PNG, JPG or WebP up to 5MB</p>
+              </template>
 
-      <!-- Body -->
-      <div class="p-6 overflow-y-auto flex-1 space-y-6">
-        
-        <!-- Image Upload -->
-        <div>
-          <label class="block text-sm font-medium text-apple-black mb-2">Product Image (600x313 recommended)</label>
-          <div 
-            class="border-2 border-dashed border-light-gray rounded-2xl p-4 text-center hover:bg-off-white transition-colors cursor-pointer group relative overflow-hidden h-48 flex flex-col items-center justify-center"
-            @click="triggerFileInput"
-          >
-            <input type="file" ref="fileInput" accept="image/jpeg,image/png,image/webp" class="hidden" @change="handleImageUpload" />
-            
-            <template v-if="previewImage">
-              <img :src="previewImage" class="absolute inset-0 w-full h-full object-cover group-hover:opacity-50 transition-opacity" />
-              <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                <span class="bg-white/90 text-apple-black font-medium px-4 py-2 rounded-lg shadow-sm">Change Image</span>
+              <!-- Loading overlay -->
+              <div v-if="isUploading" class="absolute inset-0 bg-white/80 dark:bg-black/80 flex items-center justify-center z-20">
+                <UIcon name="i-heroicons-arrow-path" class="w-8 h-8 text-primary-500 animate-spin" />
               </div>
-            </template>
-            <template v-else>
-              <PhotoIcon class="w-10 h-10 text-gray-400 mb-2" />
-              <p class="text-sm font-medium text-apple-black">Click to upload image</p>
-              <p class="text-xs text-gray-500 mt-1">PNG, JPG or WebP up to 5MB</p>
-            </template>
-
-            <!-- Loading overlay -->
-            <div v-if="isUploading" class="absolute inset-0 bg-white/80 flex items-center justify-center z-20">
-              <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-apple-blue"></div>
             </div>
           </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <UFormField label="Product Name" :error="errors.name">
+              <UInput v-model="form.name" size="md" />
+            </UFormField>
+            
+            <UFormField label="SKU" :error="errors.sku">
+              <UInput v-model="form.sku" size="md" />
+            </UFormField>
+            
+            <UFormField label="Category" :error="errors.category">
+              <USelect 
+                v-model="form.category" 
+                :items="categoryOptions"
+                size="md"
+              />
+            </UFormField>
+            
+            <UFormField label="Price (IDR)" :error="errors.price">
+              <UInput v-model="form.price" type="number" size="md" />
+            </UFormField>
+          </div>
+
+          <UFormField label="Description">
+            <UTextarea v-model="form.description" :rows="3" />
+          </UFormField>
+
+          <UFormField label="Image Display Type">
+            <URadioGroup 
+              v-model="form.imageType"
+              :items="imageTypeOptions"
+            />
+          </UFormField>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label class="block text-sm font-medium text-apple-black mb-1.5">Product Name</label>
-            <input v-model="form.name" type="text" class="w-full px-4 py-3 rounded-xl border border-light-gray focus:outline-none focus:ring-2 focus:ring-apple-blue/20 focus:border-apple-blue" :class="{'border-red-500': errors.name}" />
-            <p v-if="errors.name" class="mt-1 text-sm text-red-500">{{ errors.name }}</p>
+        <!-- Footer -->
+        <template #footer>
+          <div class="flex justify-end gap-3">
+            <UButton 
+              color="neutral" 
+              variant="ghost" 
+              @click="emit('close')"
+            >
+              Cancel
+            </UButton>
+            <UButton 
+              color="primary" 
+              :loading="isSaving || isUploading"
+              @click="handleSave"
+            >
+              Save Product
+            </UButton>
           </div>
-          <div>
-            <label class="block text-sm font-medium text-apple-black mb-1.5">SKU</label>
-            <input v-model="form.sku" type="text" class="w-full px-4 py-3 rounded-xl border border-light-gray focus:outline-none focus:ring-2 focus:ring-apple-blue/20 focus:border-apple-blue" :class="{'border-red-500': errors.sku}" />
-            <p v-if="errors.sku" class="mt-1 text-sm text-red-500">{{ errors.sku }}</p>
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-apple-black mb-1.5">Category</label>
-            <select v-model="form.category" class="w-full px-4 py-3 rounded-xl border border-light-gray focus:outline-none focus:ring-2 focus:ring-apple-blue/20 focus:border-apple-blue bg-white appearance-none" :class="{'border-red-500': errors.category}">
-              <option value="Hardware">Hardware</option>
-              <option value="Bundle">Bundle</option>
-              <option value="Subscription">Subscription</option>
-            </select>
-            <p v-if="errors.category" class="mt-1 text-sm text-red-500">{{ errors.category }}</p>
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-apple-black mb-1.5">Price (IDR)</label>
-            <input v-model="form.price" type="number" class="w-full px-4 py-3 rounded-xl border border-light-gray focus:outline-none focus:ring-2 focus:ring-apple-blue/20 focus:border-apple-blue" :class="{'border-red-500': errors.price}" />
-            <p v-if="errors.price" class="mt-1 text-sm text-red-500">{{ errors.price }}</p>
-          </div>
-        </div>
-
-        <div>
-          <label class="block text-sm font-medium text-apple-black mb-1.5">Description</label>
-          <textarea v-model="form.description" rows="3" class="w-full px-4 py-3 rounded-xl border border-light-gray focus:outline-none focus:ring-2 focus:ring-apple-blue/20 focus:border-apple-blue"></textarea>
-        </div>
-
-        <div>
-          <label class="block text-sm font-medium text-apple-black mb-1.5">Image Display Type</label>
-          <div class="flex gap-4">
-            <label class="flex items-center gap-2 cursor-pointer">
-              <input type="radio" v-model="form.imageType" value="device" class="text-apple-blue focus:ring-apple-blue">
-              <span class="text-sm">Device Only</span>
-            </label>
-            <label class="flex items-center gap-2 cursor-pointer">
-              <input type="radio" v-model="form.imageType" value="bundle" class="text-apple-blue focus:ring-apple-blue">
-              <span class="text-sm">Bundle</span>
-            </label>
-            <label class="flex items-center gap-2 cursor-pointer">
-              <input type="radio" v-model="form.imageType" value="sub" class="text-apple-blue focus:ring-apple-blue">
-              <span class="text-sm">Subscription</span>
-            </label>
-          </div>
-        </div>
-      </div>
-
-      <!-- Footer -->
-      <div class="p-6 border-t border-light-gray bg-off-white/50 flex justify-end gap-3">
-        <button @click="emit('close')" type="button" class="px-6 py-2.5 text-apple-black font-medium hover:bg-gray-200 rounded-xl transition-colors">
-          Cancel
-        </button>
-        <button 
-          @click="handleSave" 
-          :disabled="isSaving || isUploading"
-          class="px-6 py-2.5 bg-apple-blue hover:bg-apple-blue-hover text-white rounded-xl font-medium transition-colors disabled:opacity-50 flex items-center gap-2"
-        >
-          <span v-if="isSaving" class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
-          Save Product
-        </button>
-      </div>
-    </div>
-  </div>
+        </template>
+      </UCard>
+    </template>
+  </UModal>
 </template>

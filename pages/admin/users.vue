@@ -1,12 +1,4 @@
 <script setup lang="ts">
-import {
-  UserGroupIcon,
-  PlusIcon,
-  ShieldCheckIcon,
-  UserIcon,
-  PencilIcon,
-  TrashIcon
-} from '@heroicons/vue/24/outline'
 import Swal from 'sweetalert2'
 
 definePageMeta({
@@ -33,6 +25,18 @@ const fetchUsers = async () => {
 
 onMounted(() => {
   fetchUsers()
+})
+
+const columns = computed(() => {
+  const cols = [
+    { accessorKey: 'profile', header: 'User Profile' },
+    { accessorKey: 'role', header: 'Role' },
+    { accessorKey: 'createdAt', header: 'Created Date' },
+  ]
+  if (isSuperadmin.value) {
+    cols.push({ accessorKey: 'actions', header: '' })
+  }
+  return cols
 })
 
 const isModalOpen = ref(false)
@@ -182,232 +186,173 @@ const deleteUser = async (id: string, name: string) => {
     }
   }
 }
+
+const roleOptions = [
+  { label: 'Admin (Standard Access)', value: 'admin' },
+  { label: 'Super Admin (Full Access)', value: 'superadmin' }
+]
 </script>
 
 <template>
-  <div class="space-y-6 animate-fade-in">
+  <div class="space-y-6">
     <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
       <div>
-        <h1 class="text-2xl font-bold text-apple-black flex items-center gap-3">
-          <UserGroupIcon class="w-8 h-8 text-apple-blue" />
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
+          <UIcon name="i-heroicons-user-group" class="w-8 h-8 text-primary-500" />
           User Management
         </h1>
-        <p class="text-gray-500 mt-1">Manage system administrators and staff access levels</p>
+        <p class="text-gray-500 dark:text-gray-400 mt-1">Manage system administrators and staff access levels</p>
       </div>
       
-      <button 
+      <UButton 
         v-if="isSuperadmin"
+        icon="i-heroicons-plus" 
+        color="primary" 
+        size="md" 
         @click="openCreateModal" 
-        class="bg-apple-blue hover:bg-apple-blue-hover text-white px-5 py-2.5 rounded-xl font-medium transition-all shadow-sm shadow-apple-blue/20 flex items-center justify-center gap-2 active:scale-95"
+        class="font-medium"
       >
-        <PlusIcon class="w-5 h-5" />
         Add New User
-      </button>
+      </UButton>
     </div>
 
     <!-- Users List -->
-    <div class="bg-white rounded-3xl border border-light-gray shadow-sm shadow-[0_4px_20px_rgb(0,0,0,0.02)] overflow-hidden">
-      <div v-if="loading" class="p-16 flex justify-center">
-        <div class="w-10 h-10 border-4 border-light-gray border-t-apple-blue rounded-full animate-spin"></div>
-      </div>
-      <div v-else-if="users.length === 0" class="p-16 text-center text-gray-500 flex flex-col items-center">
-        <UserGroupIcon class="w-12 h-12 text-gray-300 mb-3" />
-        <p class="text-lg font-medium text-apple-black">No Users Found</p>
-        <p class="text-sm">There are currently no users in the system.</p>
-      </div>
-      <div v-else class="overflow-x-auto">
-        <table class="w-full text-left border-collapse min-w-[700px]">
-          <thead>
-            <tr class="bg-off-white/80 border-b border-light-gray text-gray-500 text-xs uppercase tracking-wider">
-              <th class="px-6 py-4 font-semibold">User Profile</th>
-              <th class="px-6 py-4 font-semibold">Role</th>
-              <th class="px-6 py-4 font-semibold">Created Date</th>
-              <th v-if="isSuperadmin" class="px-6 py-4 font-semibold text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-light-gray">
-            <tr v-for="u in users" :key="u.id" class="hover:bg-off-white/40 transition-colors group">
-              <td class="px-6 py-5">
-                <div class="flex items-center gap-4">
-                  <div class="w-11 h-11 rounded-full bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 text-apple-blue flex items-center justify-center font-bold shadow-sm">
-                    {{ u.fullName.charAt(0).toUpperCase() }}
-                  </div>
-                  <div>
-                    <div class="font-bold text-apple-black text-sm">{{ u.fullName }}</div>
-                    <div class="text-xs text-gray-500 mt-0.5 font-medium">@{{ u.username }}</div>
-                  </div>
-                </div>
-              </td>
-              <td class="px-6 py-5">
-                <span 
-                  class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold shadow-sm border"
-                  :class="u.role === 'superadmin' ? 'bg-purple-50 text-purple-700 border-purple-200' : 'bg-blue-50 text-blue-700 border-blue-200'"
-                >
-                  <ShieldCheckIcon v-if="u.role === 'superadmin'" class="w-4 h-4" />
-                  <UserIcon v-else class="w-4 h-4" />
-                  {{ u.role === 'superadmin' ? 'Super Admin' : 'Admin' }}
-                </span>
-              </td>
-              <td class="px-6 py-5 text-sm text-gray-600 font-medium">
-                {{ new Date(u.createdAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }) }}
-              </td>
-              <td v-if="isSuperadmin" class="px-6 py-5">
-                <div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button 
-                    @click="openEditModal(u)" 
-                    class="p-2 text-gray-400 hover:text-apple-blue hover:bg-blue-50 rounded-lg transition-colors"
-                    title="Edit User"
-                  >
-                    <PencilIcon class="w-5 h-5" />
-                  </button>
-                  <button 
-                    v-if="u.id !== user?.sub"
-                    @click="deleteUser(u.id, u.fullName)" 
-                    class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                    title="Delete User"
-                  >
-                    <TrashIcon class="w-5 h-5" />
-                  </button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- Create/Edit User Modal (Industry Standard UI) -->
-    <Transition name="modal">
-      <div v-if="isModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-apple-black/40 backdrop-blur-md">
-        <div class="bg-white rounded-[24px] max-w-md w-full shadow-2xl overflow-hidden flex flex-col max-h-full">
-          <!-- Modal Header -->
-          <div class="px-6 py-5 border-b border-light-gray flex justify-between items-center bg-off-white/50">
+    <UCard class="overflow-hidden">
+      <UTable 
+        :data="users" 
+        :columns="columns" 
+        :loading="loading"
+      >
+        <template #empty>
+          <div class="p-16 text-center text-gray-500 dark:text-gray-400 flex flex-col items-center">
+            <UIcon name="i-heroicons-user-group" class="w-12 h-12 text-gray-300 dark:text-gray-600 mb-3" />
+            <p class="text-lg font-medium text-gray-900 dark:text-white">No Users Found</p>
+            <p class="text-sm mt-1">There are currently no users in the system.</p>
+          </div>
+        </template>
+        
+        <template #profile-cell="{ row }">
+          <div class="flex items-center gap-4">
+            <UAvatar 
+              :alt="row.original.fullName.charAt(0).toUpperCase()" 
+              size="md" 
+              class="bg-primary-100 text-primary-600 dark:bg-primary-900/50 dark:text-primary-400 font-bold" 
+            />
             <div>
-              <h3 class="text-xl font-bold text-apple-black">
-                {{ modalMode === 'create' ? 'Add New User' : 'Edit User Profile' }}
-              </h3>
-              <p class="text-xs text-gray-500 mt-1 font-medium">
-                {{ modalMode === 'create' ? 'Fill in the details to create an account.' : 'Update the user information below.' }}
-              </p>
+              <div class="font-bold text-gray-900 dark:text-white text-sm">{{ row.original.fullName }}</div>
+              <div class="text-xs text-gray-500 dark:text-gray-400 mt-0.5 font-medium">@{{ row.original.username }}</div>
             </div>
-            <button @click="isModalOpen = false" class="p-2 text-gray-400 hover:text-apple-black bg-white hover:bg-gray-100 rounded-full transition-colors border border-light-gray shadow-sm">
-              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-            </button>
           </div>
-          
-          <!-- Modal Body -->
-          <div class="p-6 overflow-y-auto">
-            <form @submit.prevent="submitForm" class="space-y-5">
-              <div>
-                <label class="block text-sm font-semibold text-apple-black mb-1.5">Full Name</label>
-                <input 
-                  v-model="form.fullName" 
-                  type="text" 
-                  class="w-full px-4 py-3 rounded-xl border border-light-gray focus:outline-none focus:ring-4 focus:ring-apple-blue/10 focus:border-apple-blue transition-all bg-off-white/50 focus:bg-white"
-                  placeholder="e.g. John Doe"
-                />
-              </div>
-              
-              <div>
-                <label class="block text-sm font-semibold text-apple-black mb-1.5">Username</label>
-                <div class="relative">
-                  <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <span class="text-gray-400 font-medium">@</span>
-                  </div>
-                  <input 
-                    v-model="form.username" 
-                    type="text" 
-                    class="w-full pl-9 pr-4 py-3 rounded-xl border border-light-gray focus:outline-none focus:ring-4 focus:ring-apple-blue/10 focus:border-apple-blue transition-all bg-off-white/50 focus:bg-white"
-                    placeholder="johndoe"
-                  />
-                </div>
-              </div>
-              
-              <div>
-                <label class="block text-sm font-semibold text-apple-black mb-1.5">
-                  Password 
-                  <span v-if="modalMode === 'edit'" class="text-xs font-normal text-gray-400 ml-1">(Leave empty to keep current)</span>
-                </label>
-                <input 
-                  v-model="form.password" 
-                  type="password" 
-                  class="w-full px-4 py-3 rounded-xl border border-light-gray focus:outline-none focus:ring-4 focus:ring-apple-blue/10 focus:border-apple-blue transition-all bg-off-white/50 focus:bg-white"
-                  placeholder="••••••••"
-                />
-              </div>
-              
-              <div>
-                <label class="block text-sm font-semibold text-apple-black mb-1.5">Role Access</label>
-                <div class="relative">
-                  <select 
-                    v-model="form.role" 
-                    class="w-full px-4 py-3 rounded-xl border border-light-gray focus:outline-none focus:ring-4 focus:ring-apple-blue/10 focus:border-apple-blue transition-all bg-off-white/50 focus:bg-white appearance-none font-medium"
-                  >
-                    <option value="admin">Admin (Standard Access)</option>
-                    <option value="superadmin">Super Admin (Full Access)</option>
-                  </select>
-                  <div class="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none text-gray-500">
-                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
-                  </div>
-                </div>
-              </div>
-            </form>
+        </template>
+        
+        <template #role-cell="{ row }">
+          <UBadge 
+            :color="row.original.role === 'superadmin' ? 'secondary' : 'info'" 
+            variant="subtle"
+            class="font-semibold gap-1.5"
+          >
+            <UIcon :name="row.original.role === 'superadmin' ? 'i-heroicons-shield-check' : 'i-heroicons-user'" class="w-4 h-4" />
+            {{ row.original.role === 'superadmin' ? 'Super Admin' : 'Admin' }}
+          </UBadge>
+        </template>
+        
+        <template #createdAt-cell="{ row }">
+          <span class="text-sm text-gray-600 dark:text-gray-400 font-medium">
+            {{ new Date(row.original.createdAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }) }}
+          </span>
+        </template>
+        
+        <template #actions-cell="{ row }">
+          <div class="flex items-center justify-end gap-2">
+            <UButton 
+              icon="i-heroicons-pencil" 
+              color="neutral" 
+              variant="ghost" 
+              size="sm" 
+              title="Edit User"
+              @click="openEditModal(row.original)" 
+            />
+            <UButton 
+              v-if="row.original.id !== user?.sub"
+              icon="i-heroicons-trash" 
+              color="error" 
+              variant="ghost" 
+              size="sm" 
+              title="Delete User"
+              @click="deleteUser(row.original.id, row.original.fullName)" 
+            />
           </div>
+        </template>
+      </UTable>
+    </UCard>
 
-          <!-- Modal Footer -->
-          <div class="px-6 py-5 border-t border-light-gray bg-off-white/30 flex justify-end gap-3">
-            <button 
-              type="button" 
-              @click="isModalOpen = false" 
-              class="px-5 py-2.5 bg-white hover:bg-gray-50 text-gray-700 rounded-xl font-semibold transition-colors border border-light-gray shadow-sm"
+    <!-- Create/Edit User Modal -->
+    <UModal v-model:open="isModalOpen">
+      <template #content>
+        <UCard>
+          <template #header>
+            <div class="flex justify-between items-center">
+              <div>
+                <h3 class="text-xl font-bold text-gray-900 dark:text-white">
+                  {{ modalMode === 'create' ? 'Add New User' : 'Edit User Profile' }}
+                </h3>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 font-medium">
+                  {{ modalMode === 'create' ? 'Fill in the details to create an account.' : 'Update the user information below.' }}
+                </p>
+              </div>
+              <UButton 
+                color="neutral" 
+                variant="ghost" 
+                icon="i-heroicons-x-mark" 
+                class="-my-1" 
+                @click="isModalOpen = false" 
+              />
+            </div>
+          </template>
+          
+          <form @submit.prevent="submitForm" class="space-y-5 max-h-[60vh] overflow-y-auto px-2 pb-2">
+            <UFormField label="Full Name" name="fullName" required>
+              <UInput v-model="form.fullName" placeholder="e.g. John Doe" />
+            </UFormField>
+            
+            <UFormField label="Username" name="username" required>
+              <UInput v-model="form.username" placeholder="johndoe">
+                <template #leading>
+                  <span class="text-gray-500 dark:text-gray-400">@</span>
+                </template>
+              </UInput>
+            </UFormField>
+            
+            <UFormField 
+              label="Password" 
+              name="password" 
+              :hint="modalMode === 'edit' ? 'Leave empty to keep current' : ''"
+              :required="modalMode === 'create'"
             >
-              Cancel
-            </button>
-            <button 
-              @click="submitForm"
-              :disabled="isSubmitting"
-              class="px-6 py-2.5 bg-apple-blue hover:bg-apple-blue-hover text-white rounded-xl font-semibold transition-all shadow-sm shadow-apple-blue/20 flex justify-center items-center gap-2 active:scale-95 disabled:opacity-70 disabled:active:scale-100"
-            >
-              <span v-if="isSubmitting" class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
-              <span v-else>{{ modalMode === 'create' ? 'Create User' : 'Save Changes' }}</span>
-            </button>
-          </div>
-        </div>
-      </div>
-    </Transition>
+              <UInput v-model="form.password" type="password" placeholder="••••••••" />
+            </UFormField>
+            
+            <UFormField label="Role Access" name="role">
+              <USelect 
+                v-model="form.role" 
+                :items="roleOptions" 
+              />
+            </UFormField>
+          </form>
+
+          <template #footer>
+            <div class="flex justify-end gap-3">
+              <UButton color="neutral" variant="ghost" @click="isModalOpen = false">
+                Cancel
+              </UButton>
+              <UButton color="primary" @click="submitForm" :loading="isSubmitting">
+                {{ modalMode === 'create' ? 'Create User' : 'Save Changes' }}
+              </UButton>
+            </div>
+          </template>
+        </UCard>
+      </template>
+    </UModal>
   </div>
 </template>
-
-<style scoped>
-.animate-fade-in {
-  animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-/* Modal Transitions */
-.modal-enter-active,
-.modal-leave-active {
-  transition: opacity 0.3s ease;
-}
-
-.modal-enter-from,
-.modal-leave-to {
-  opacity: 0;
-}
-
-.modal-enter-active .bg-white,
-.modal-leave-active .bg-white {
-  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
-}
-
-.modal-enter-from .bg-white,
-.modal-leave-to .bg-white {
-  opacity: 0;
-  transform: scale(0.95) translateY(10px);
-}
-</style>

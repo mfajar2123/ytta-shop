@@ -14,7 +14,7 @@ export default defineNuxtConfig({
     }
   },
   modules: [
-    '@nuxtjs/tailwindcss',
+    '@nuxt/ui',
     '@nuxt/image',
     '@nuxtjs/google-fonts'
   ],
@@ -37,5 +37,8 @@ export default defineNuxtConfig({
       ]
     },
     pageTransition: { name: 'page', mode: 'out-in' }
+  },
+  routeRules: {
+    '/admin/**': { ssr: false }
   }
 })

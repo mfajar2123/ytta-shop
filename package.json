@@ -16,6 +16,8 @@
   },
   "dependencies": {
     "@heroicons/vue": "^2.2.0",
+    "@nuxt/ui": "^4.10.0",
+    "@tailwindcss/vite": "^4.3.3",
     "bcrypt": "^6.0.0",
     "drizzle-orm": "^0.45.2",
     "ejs": "^6.0.1",
@@ -23,7 +25,7 @@
     "jsonwebtoken": "^9.0.3",
     "jspdf": "^4.2.1",
     "nodemailer": "^9.0.3",
-    "nuxt": "^3.11.2",
+    "nuxt": "^4.5.0",
     "pdfkit": "^0.19.1",
     "pg": "^8.22.0",
     "sweetalert2": "^11.26.24",
@@ -32,6 +34,8 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@iconify-json/heroicons": "^1.2.3",
+    "@iconify-json/lucide": "^1.2.118",
     "@nuxt/image": "^2.0.0",
     "@nuxtjs/google-fonts": "^3.2.0",
     "@nuxtjs/tailwindcss": "^6.11.4",
@@ -44,7 +48,7 @@
     "autoprefixer": "^10.4.19",
     "drizzle-kit": "^0.31.3",
     "postcss": "^8.4.38",
-    "tailwindcss": "^3.4.3",
+    "tailwindcss": "^4.3.3",
     "tsx": "^4.19.4"
   },
   "pnpm": {
@@ -53,9 +57,9 @@
     ],
     "ignoredBuiltDependencies": [
       "@parcel/watcher",
-      "core-js",
       "esbuild",
-      "sharp"
+      "sharp",
+      "vue-demi"
     ]
   }
 }

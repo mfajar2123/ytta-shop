@@ -9,31 +9,27 @@ defineProps<{
 </script>
 
 <template>
-  <div class="bg-white p-6 rounded-2xl border border-light-gray shadow-sm">
+  <UCard :ui="{ body: { padding: 'p-6' } }">
     <div class="flex items-center justify-between">
       <div>
-        <p class="text-sm font-medium text-gray-500 mb-1">{{ title }}</p>
-        <h3 class="text-2xl font-semibold text-apple-black">{{ value }}</h3>
+        <p class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">{{ title }}</p>
+        <h3 class="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">{{ value }}</h3>
       </div>
-      <div class="w-12 h-12 rounded-xl bg-off-white flex items-center justify-center text-apple-blue">
+      <div class="w-12 h-12 rounded-xl bg-primary-50 dark:bg-primary-900/50 flex items-center justify-center text-primary-600 dark:text-primary-400">
         <component :is="icon" class="w-6 h-6" />
       </div>
     </div>
     
     <div v-if="trend" class="mt-4 flex items-center gap-2 text-sm">
       <span 
-        :class="trendUp ? 'text-green-600 bg-green-50' : 'text-red-600 bg-red-50'"
-        class="px-2 py-0.5 rounded-full font-medium flex items-center"
+        :class="trendUp ? 'text-green-700 bg-green-50 dark:text-green-400 dark:bg-green-500/10' : 'text-red-700 bg-red-50 dark:text-red-400 dark:bg-red-500/10'"
+        class="px-2 py-0.5 rounded-md font-medium flex items-center text-xs"
       >
-        <svg v-if="trendUp" class="w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-        </svg>
-        <svg v-else class="w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
-        </svg>
+        <UIcon v-if="trendUp" name="i-heroicons-arrow-trending-up" class="w-3.5 h-3.5 mr-1" />
+        <UIcon v-else name="i-heroicons-arrow-trending-down" class="w-3.5 h-3.5 mr-1" />
         {{ trend }}
       </span>
-      <span class="text-gray-500">vs last month</span>
+      <span class="text-gray-500 dark:text-gray-400 text-xs font-medium">vs last month</span>
     </div>
-  </div>
+  </UCard>
 </template>

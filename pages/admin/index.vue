@@ -3,8 +3,7 @@ import {
   CurrencyDollarIcon, 
   ShoppingCartIcon, 
   ClockIcon, 
-  CubeIcon,
-  ChevronRightIcon
+  CubeIcon
 } from '@heroicons/vue/24/outline'
 import Swal from 'sweetalert2'
 
@@ -60,51 +59,48 @@ const stats = computed(() => {
 <template>
   <div class="space-y-8 pb-12 animate-fade-in">
     <!-- Welcome Banner -->
-    <div v-if="user" class="bg-gradient-to-r from-apple-blue to-blue-600 rounded-3xl p-8 text-white shadow-lg shadow-apple-blue/20 flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden">
+    <div v-if="user" class="bg-gradient-to-r from-primary-600 to-blue-600 rounded-3xl p-8 text-white shadow-xl shadow-primary-500/10 flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden">
       <!-- Decorative background elements -->
       <div class="absolute -top-10 -right-10 w-40 h-40 bg-white opacity-10 rounded-full blur-2xl"></div>
       <div class="absolute -bottom-10 right-20 w-32 h-32 bg-white opacity-10 rounded-full blur-xl"></div>
       
       <div class="z-10 relative">
         <h1 class="text-3xl font-bold tracking-tight mb-2">Hello, {{ user.fullName || user.username }}! 👋</h1>
-        <p class="text-blue-100 text-sm md:text-base font-medium max-w-xl leading-relaxed">
+        <p class="text-primary-100 text-sm md:text-base font-medium max-w-xl leading-relaxed">
           Welcome back to your Imani Admin Dashboard. Here's a quick overview of what's happening with your store today.
         </p>
       </div>
       
       <div class="hidden md:flex z-10 shrink-0 bg-white/20 backdrop-blur-sm px-6 py-4 rounded-2xl border border-white/20 items-center gap-4">
-        <div class="w-12 h-12 bg-white text-apple-blue rounded-xl flex items-center justify-center font-bold text-xl shadow-sm">
-          {{ user.fullName ? user.fullName.charAt(0).toUpperCase() : 'A' }}
-        </div>
+        <UAvatar :alt="user.fullName ? user.fullName.charAt(0).toUpperCase() : 'A'" size="lg" class="bg-white text-primary-600 font-bold shadow-sm" />
         <div>
-          <p class="text-xs text-blue-100 font-bold uppercase tracking-wider">{{ user.role === 'superadmin' ? 'Super Admin' : 'Admin' }}</p>
+          <p class="text-xs text-primary-100 font-bold uppercase tracking-wider">{{ user.role === 'superadmin' ? 'Super Admin' : 'Admin' }}</p>
           <p class="font-bold text-white">{{ user.username }}</p>
         </div>
       </div>
     </div>
 
     <div v-else>
-      <h2 class="text-2xl font-bold text-apple-black">Overview</h2>
-      <p class="text-gray-500 mt-1">Here's what's happening with your store today.</p>
+      <h2 class="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">Overview</h2>
+      <p class="text-gray-500 dark:text-gray-400 mt-1">Here's what's happening with your store today.</p>
     </div>
 
     <!-- Error Alert -->
-    <div v-if="error" class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl flex items-start gap-3">
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mt-0.5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
-        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
-      </svg>
-      <div>
-        <p class="font-bold text-sm">Failed to load dashboard data</p>
-        <p class="text-sm mt-0.5">{{ error.data?.message || error.message || 'Cannot connect to database or server is offline.' }}</p>
-      </div>
-    </div>
+    <UAlert
+      v-if="error"
+      icon="i-heroicons-exclamation-triangle"
+      color="red"
+      variant="soft"
+      title="Failed to load dashboard data"
+      :description="error.data?.message || error.message || 'Cannot connect to database or server is offline.'"
+    />
 
     <!-- Stats Grid -->
     <div v-if="pending" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-      <div v-for="i in 4" :key="i" class="bg-white rounded-2xl border border-light-gray p-6 h-32 animate-pulse">
-        <div class="h-10 w-10 bg-gray-200 rounded-lg mb-4"></div>
-        <div class="h-6 bg-gray-200 rounded w-1/2"></div>
-      </div>
+      <UCard v-for="i in 4" :key="i" :ui="{ body: { padding: 'p-6' } }">
+        <div class="h-10 w-10 bg-gray-200 dark:bg-gray-800 rounded-lg mb-4 animate-pulse"></div>
+        <div class="h-6 bg-gray-200 dark:bg-gray-800 rounded w-1/2 animate-pulse"></div>
+      </UCard>
     </div>
     
     <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -121,88 +117,106 @@ const stats = computed(() => {
       <div class="xl:col-span-2 space-y-8">
         
         <!-- Recent Orders -->
-        <div class="bg-white rounded-2xl border border-light-gray shadow-sm overflow-hidden">
-          <div class="flex items-center justify-between p-6 border-b border-light-gray">
-            <h3 class="text-lg font-bold text-apple-black">Recent Orders</h3>
-            <NuxtLink to="/admin/orders" class="text-sm font-medium text-apple-blue hover:underline flex items-center">
-              View All <ChevronRightIcon class="w-4 h-4 ml-1" />
-            </NuxtLink>
-          </div>
+        <UCard :ui="{ header: { padding: 'p-6' }, body: { padding: 'p-0' } }">
+          <template #header>
+            <div class="flex items-center justify-between">
+              <h3 class="text-lg font-bold text-gray-900 dark:text-white tracking-tight">Recent Orders</h3>
+              <UButton 
+                to="/admin/orders" 
+                color="primary" 
+                variant="link" 
+                trailing-icon="i-heroicons-chevron-right" 
+                class="font-medium px-0"
+              >
+                View All
+              </UButton>
+            </div>
+          </template>
           
-          <div v-if="pending" class="p-6 text-center text-gray-500">Loading orders...</div>
-          <div v-else-if="!statsData?.recentOrders?.length" class="p-12 text-center text-gray-500 border-2 border-dashed border-light-gray m-6 rounded-xl">
+          <div v-if="pending" class="p-6 text-center text-gray-500 dark:text-gray-400">Loading orders...</div>
+          <div v-else-if="!statsData?.recentOrders?.length" class="p-12 text-center text-gray-500 border-2 border-dashed border-gray-200 dark:border-gray-800 m-6 rounded-xl">
             No orders found.
           </div>
-          <div v-else class="divide-y divide-light-gray">
-            <div v-for="order in statsData.recentOrders" :key="order.id" class="p-4 hover:bg-off-white/50 transition-colors flex items-center justify-between">
+          <div v-else class="divide-y divide-gray-200 dark:divide-gray-800">
+            <div v-for="order in statsData.recentOrders" :key="order.id" class="p-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors flex items-center justify-between">
               <div>
-                <p class="font-medium text-apple-black">{{ order.invoiceNumber }}</p>
-                <p class="text-sm text-gray-500">{{ new Date(order.createdAt).toLocaleDateString('id-ID') }} &bull; {{ order.billingDetails?.fullName }}</p>
+                <p class="font-semibold text-gray-900 dark:text-white">{{ order.invoiceNumber }}</p>
+                <p class="text-sm text-gray-500 dark:text-gray-400">{{ new Date(order.createdAt).toLocaleDateString('id-ID') }} &bull; {{ order.billingDetails?.fullName }}</p>
               </div>
               <div class="text-right flex flex-col items-end">
-                <p class="font-medium text-apple-black mb-1">
+                <p class="font-bold text-gray-900 dark:text-white mb-2">
                   Rp {{ order.total.toLocaleString('id-ID') }}
                 </p>
                 <AdminStatusBadge :status="order.status" />
               </div>
             </div>
           </div>
-        </div>
+        </UCard>
         
         <!-- Recent Products Preview -->
-        <div class="bg-white rounded-2xl border border-light-gray shadow-sm overflow-hidden">
-          <div class="flex items-center justify-between p-6 border-b border-light-gray">
-            <h3 class="text-lg font-bold text-apple-black">Product Showcase Preview</h3>
-            <NuxtLink to="/admin/products" class="text-sm font-medium text-apple-blue hover:underline flex items-center">
-              Manage <ChevronRightIcon class="w-4 h-4 ml-1" />
-            </NuxtLink>
-          </div>
+        <UCard :ui="{ header: { padding: 'p-6' }, body: { padding: 'p-6' } }">
+          <template #header>
+            <div class="flex items-center justify-between">
+              <h3 class="text-lg font-bold text-gray-900 dark:text-white tracking-tight">Product Showcase Preview</h3>
+              <UButton 
+                to="/admin/products" 
+                color="primary" 
+                variant="link" 
+                trailing-icon="i-heroicons-chevron-right" 
+                class="font-medium px-0"
+              >
+                Manage
+              </UButton>
+            </div>
+          </template>
           
-          <div v-if="pending" class="p-6 text-center text-gray-500">Loading products...</div>
-          <div v-else-if="!statsData?.recentProducts?.length" class="p-12 text-center text-gray-500 border-2 border-dashed border-light-gray m-6 rounded-xl">
+          <div v-if="pending" class="text-center text-gray-500">Loading products...</div>
+          <div v-else-if="!statsData?.recentProducts?.length" class="p-12 text-center text-gray-500 border-2 border-dashed border-gray-200 dark:border-gray-800 rounded-xl">
             No products found.
           </div>
-          <div v-else class="p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div v-for="product in statsData.recentProducts" :key="product.id" class="border border-light-gray rounded-xl overflow-hidden hover:border-apple-blue transition-colors group relative">
-              <div class="aspect-[16/9] w-full bg-gray-100 overflow-hidden">
+          <div v-else class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div v-for="product in statsData.recentProducts" :key="product.id" class="border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden hover:border-primary-500 dark:hover:border-primary-500 transition-colors group relative bg-white dark:bg-gray-900">
+              <div class="aspect-[16/9] w-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
                 <NuxtImg :src="product.imageUrl || (product.imageType === 'device' ? '/img/shop/SC1000-No-BG-Device-Only.png' : product.imageType === 'sub' ? '/img/shop/SC1000-No-BG-Subsc-Only.png' : '/img/shop/SC1000-No-BG.png')" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
               </div>
-              <div class="p-4 bg-white">
-                <span class="text-[10px] font-bold tracking-wider text-apple-blue uppercase mb-1 block">{{ product.category }}</span>
-                <p class="font-medium text-apple-black truncate">{{ product.name }}</p>
-                <p class="text-sm font-bold text-gray-900 mt-1">Rp {{ product.price.toLocaleString('id-ID') }}</p>
+              <div class="p-4">
+                <span class="text-[10px] font-bold tracking-wider text-primary-600 dark:text-primary-400 uppercase mb-1 block">{{ product.category }}</span>
+                <p class="font-medium text-gray-900 dark:text-white truncate">{{ product.name }}</p>
+                <p class="text-sm font-bold text-gray-900 dark:text-white mt-1">Rp {{ product.price.toLocaleString('id-ID') }}</p>
               </div>
             </div>
           </div>
-        </div>
+        </UCard>
 
       </div>
 
       <!-- Quick Actions -->
-      <div class="bg-white rounded-2xl border border-light-gray shadow-sm p-6 h-fit sticky top-6">
-        <h3 class="text-lg font-bold text-apple-black mb-6">Quick Actions</h3>
+      <UCard class="h-fit sticky top-24" :ui="{ header: { padding: 'p-6' }, body: { padding: 'p-6' } }">
+        <template #header>
+          <h3 class="text-lg font-bold text-gray-900 dark:text-white tracking-tight">Quick Actions</h3>
+        </template>
         <div class="space-y-3">
-          <NuxtLink to="/admin/products" class="flex items-center gap-3 p-4 rounded-xl border border-light-gray hover:border-apple-blue hover:bg-off-white transition-all group">
-            <div class="w-10 h-10 rounded-lg bg-apple-blue/10 text-apple-blue flex items-center justify-center group-hover:scale-110 transition-transform">
-              <CubeIcon class="w-5 h-5" />
+          <NuxtLink to="/admin/products" class="flex items-center gap-3 p-4 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-primary-500 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-all group">
+            <div class="w-10 h-10 rounded-lg bg-primary-100 dark:bg-primary-900/50 text-primary-600 dark:text-primary-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+              <UIcon name="i-heroicons-cube" class="w-5 h-5" />
             </div>
             <div>
-              <p class="font-medium text-apple-black">Manage Products</p>
-              <p class="text-sm text-gray-500">Add or edit products</p>
+              <p class="font-medium text-gray-900 dark:text-white">Manage Products</p>
+              <p class="text-sm text-gray-500 dark:text-gray-400">Add or edit products</p>
             </div>
           </NuxtLink>
           
-          <NuxtLink to="/admin/orders" class="flex items-center gap-3 p-4 rounded-xl border border-light-gray hover:border-apple-blue hover:bg-off-white transition-all group">
-            <div class="w-10 h-10 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-              <ClockIcon class="w-5 h-5" />
+          <NuxtLink to="/admin/orders" class="flex items-center gap-3 p-4 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-primary-500 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-all group">
+            <div class="w-10 h-10 rounded-lg bg-amber-100 dark:bg-amber-900/50 text-amber-600 dark:text-amber-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+              <UIcon name="i-heroicons-clock" class="w-5 h-5" />
             </div>
             <div>
-              <p class="font-medium text-apple-black">Pending Orders</p>
-              <p class="text-sm text-gray-500">Review new orders</p>
+              <p class="font-medium text-gray-900 dark:text-white">Pending Orders</p>
+              <p class="text-sm text-gray-500 dark:text-gray-400">Review new orders</p>
             </div>
           </NuxtLink>
         </div>
-      </div>
+      </UCard>
     </div>
   </div>
 </template>

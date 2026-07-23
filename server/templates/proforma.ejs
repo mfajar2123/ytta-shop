@@ -16,7 +16,7 @@
       <div class="highlight-box">
         <h3>Total Amount to Transfer</h3>
         <div class="amount"><%= new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(order.total) %></div>
-        <p style="margin: 0;"><strong>Bank BCA:</strong> 1234567890<br/><strong>Name:</strong> PT Imani Prima</p>
+        <p style="margin: 0;"><strong>Bank <%= settings.bank_name %>:</strong> <%= settings.bank_account %><br/><strong>Name:</strong> <%= settings.bank_owner %></p>
         <p style="font-size: 12px; color: #86868B; margin-top: 12px;">* This total includes a unique code to help us verify your payment automatically.</p>
       </div>
 

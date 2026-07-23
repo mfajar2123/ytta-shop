@@ -1,12 +1,4 @@
 <script setup lang="ts">
-import { 
-  PlusIcon,
-  PencilIcon,
-  TrashIcon,
-  MagnifyingGlassIcon,
-  XMarkIcon,
-  PhotoIcon
-} from '@heroicons/vue/24/outline'
 import Swal from 'sweetalert2'
 
 definePageMeta({
@@ -31,6 +23,14 @@ const filteredProducts = computed(() => {
     p.category.toLowerCase().includes(query)
   )
 })
+
+const columns = [
+  { accessorKey: 'image', header: 'Image' },
+  { accessorKey: 'details', header: 'Name & SKU' },
+  { accessorKey: 'category', header: 'Category' },
+  { accessorKey: 'price', header: 'Price' },
+  { id: 'actions', header: '' }
+]
 
 const openCreateModal = () => {
   selectedProduct.value = null
@@ -85,89 +85,92 @@ const formatPrice = (price: number) => {
     <!-- Header -->
     <div class="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
       <div>
-        <h2 class="text-2xl font-bold text-apple-black">Products</h2>
-        <p class="text-gray-500 mt-1">Manage your store products and bundles.</p>
+        <h2 class="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">Products</h2>
+        <p class="text-gray-500 dark:text-gray-400 mt-1">Manage your store products and bundles.</p>
       </div>
-      <button 
+      <UButton 
+        icon="i-heroicons-plus" 
+        color="primary" 
+        size="md" 
+        class="font-medium"
         @click="openCreateModal"
-        class="flex items-center gap-2 px-4 py-2.5 bg-apple-blue hover:bg-apple-blue-hover text-white rounded-xl font-medium transition-colors"
       >
-        <PlusIcon class="w-5 h-5" />
         Add Product
-      </button>
+      </UButton>
     </div>
 
     <!-- Toolbar -->
-    <div class="bg-white p-4 rounded-2xl border border-light-gray shadow-sm flex gap-4">
-      <div class="relative flex-1 max-w-md">
-        <MagnifyingGlassIcon class="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-        <input 
-          v-model="searchQuery"
-          type="text" 
+    <UCard>
+      <div class="max-w-md">
+        <UInput 
+          v-model="searchQuery" 
+          icon="i-heroicons-magnifying-glass" 
           placeholder="Search products..." 
-          class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-light-gray focus:outline-none focus:ring-2 focus:ring-apple-blue/20 focus:border-apple-blue transition-all"
+          size="md"
         />
       </div>
-    </div>
+    </UCard>
 
     <!-- Table -->
-    <div class="bg-white rounded-2xl border border-light-gray shadow-sm overflow-hidden">
-      <div class="overflow-x-auto">
-        <table class="w-full text-left border-collapse">
-          <thead>
-            <tr class="border-b border-light-gray bg-off-white/50">
-              <th class="px-6 py-4 text-sm font-medium text-gray-500 w-16">Image</th>
-              <th class="px-6 py-4 text-sm font-medium text-gray-500">Name & SKU</th>
-              <th class="px-6 py-4 text-sm font-medium text-gray-500">Category</th>
-              <th class="px-6 py-4 text-sm font-medium text-gray-500">Price</th>
-              <th class="px-6 py-4 text-sm font-medium text-gray-500 text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-light-gray">
-            <tr v-if="pending" class="hover:bg-off-white/50 transition-colors">
-              <td colspan="5" class="px-6 py-12 text-center text-gray-500">Loading products...</td>
-            </tr>
-            <tr v-else-if="filteredProducts.length === 0" class="hover:bg-off-white/50 transition-colors">
-              <td colspan="5" class="px-6 py-12 text-center text-gray-500">No products found.</td>
-            </tr>
-            <tr v-else v-for="product in filteredProducts" :key="product.id" class="hover:bg-off-white/50 transition-colors group">
-              <td class="px-6 py-4">
-                <div class="w-12 h-12 rounded-lg bg-gray-100 overflow-hidden border border-light-gray flex items-center justify-center">
-                  <NuxtImg 
-                    v-if="product.imageUrl" 
-                    :src="product.imageUrl" 
-                    class="w-full h-full object-cover" 
-                  />
-                  <PhotoIcon v-else class="w-6 h-6 text-gray-400" />
-                </div>
-              </td>
-              <td class="px-6 py-4">
-                <div class="font-medium text-apple-black">{{ product.name }}</div>
-                <div class="text-sm text-gray-500 mt-0.5">{{ product.sku }}</div>
-              </td>
-              <td class="px-6 py-4">
-                <span class="px-2.5 py-1 text-xs font-medium bg-gray-100 text-gray-700 rounded-lg">
-                  {{ product.category }}
-                </span>
-              </td>
-              <td class="px-6 py-4 text-apple-black font-medium">
-                {{ formatPrice(product.price) }}
-              </td>
-              <td class="px-6 py-4 text-right">
-                <div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button @click="openEditModal(product)" class="p-2 text-gray-500 hover:text-apple-blue hover:bg-apple-blue/10 rounded-lg transition-colors">
-                    <PencilIcon class="w-5 h-5" />
-                  </button>
-                  <button @click="handleDelete(product)" class="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
-                    <TrashIcon class="w-5 h-5" />
-                  </button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
+    <UCard class="overflow-hidden">
+      <UTable 
+        :data="filteredProducts" 
+        :columns="columns" 
+        :loading="pending"
+        class="w-full"
+      >
+        <template #empty>
+          <div class="p-12 text-center text-gray-500 dark:text-gray-400">
+            No products found.
+          </div>
+        </template>
+        
+        <template #image-cell="{ row }">
+          <div class="w-12 h-12 rounded-lg bg-gray-100 dark:bg-gray-800 overflow-hidden border border-gray-200 dark:border-gray-700 flex items-center justify-center">
+            <NuxtImg 
+              v-if="row.original.imageUrl" 
+              :src="row.original.imageUrl" 
+              class="w-full h-full object-cover" 
+            />
+            <UIcon v-else name="i-heroicons-photo" class="w-6 h-6 text-gray-400" />
+          </div>
+        </template>
+        
+        <template #details-cell="{ row }">
+          <div class="font-medium text-gray-900 dark:text-white">{{ row.original.name }}</div>
+          <div class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{{ row.original.sku }}</div>
+        </template>
+        
+        <template #category-cell="{ row }">
+          <UBadge color="neutral" variant="subtle" class="font-medium">{{ row.original.category }}</UBadge>
+        </template>
+        
+        <template #price-cell="{ row }">
+          <div class="text-gray-900 dark:text-white font-medium">
+            {{ formatPrice(row.original.price) }}
+          </div>
+        </template>
+        
+        <template #actions-cell="{ row }">
+          <div class="flex items-center justify-end gap-2">
+            <UButton 
+              icon="i-heroicons-pencil" 
+              color="neutral" 
+              variant="ghost" 
+              size="sm" 
+              @click="openEditModal(row.original)" 
+            />
+            <UButton 
+              icon="i-heroicons-trash" 
+              color="error" 
+              variant="ghost" 
+              size="sm" 
+              @click="handleDelete(row.original)" 
+            />
+          </div>
+        </template>
+      </UTable>
+    </UCard>
 
     <!-- Form Modal -->
     <AdminProductFormModal 

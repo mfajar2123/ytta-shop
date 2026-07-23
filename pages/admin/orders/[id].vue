@@ -1,11 +1,4 @@
 <script setup lang="ts">
-import { 
-  ArrowLeftIcon, 
-  DocumentTextIcon,
-  CheckCircleIcon,
-  PencilIcon,
-  XCircleIcon
-} from '@heroicons/vue/24/outline'
 import Swal from 'sweetalert2'
 
 definePageMeta({
@@ -58,9 +51,9 @@ const saveEdit = async () => {
       method: 'PUT',
       body: editData.value
     })
-    Swal.fire('Saved!', 'Order details updated successfully.', 'success')
     isEditing.value = false
-    refresh()
+    await refresh()
+    Swal.fire('Saved!', 'Order details updated successfully.', 'success')
   } catch (err: any) {
     Swal.fire('Error', err.data?.message || 'Failed to update order', 'error')
   }
@@ -77,19 +70,12 @@ const updateStatus = async (newStatus: string) => {
 
   if (result.isConfirmed) {
     isUpdating.value = true
-    Swal.fire({
-      title: 'Processing...',
-      html: 'Please wait while we update the status and send emails.',
-      allowOutsideClick: false,
-      didOpen: () => {
-        Swal.showLoading()
-      }
-    })
     try {
       const response = await $fetch<any>(`/api/orders/${orderId}/status`, {
         method: 'PATCH',
         body: { status: newStatus, adminNotes: adminNotes.value || undefined }
       })
+      await refresh()
       
       if (response._meta && !response._meta.emailSent) {
         Swal.fire({ 
@@ -101,7 +87,6 @@ const updateStatus = async (newStatus: string) => {
       } else {
         Swal.fire({ icon: 'success', title: 'Status Updated', text: 'Email notification has been sent.', confirmButtonColor: '#0071E3' })
       }
-      refresh()
     } catch (error: any) {
       Swal.fire('Error', error.data?.message || 'Failed to update status', 'error')
     } finally {
@@ -140,22 +125,13 @@ const handleUploadProof = async (event: Event) => {
   formData.append('orderId', orderId)
 
   isUploadingProof.value = true
-  Swal.fire({
-    title: 'Uploading Proof...',
-    html: 'Please wait while the file is being uploaded.',
-    allowOutsideClick: false,
-    didOpen: () => {
-      Swal.showLoading()
-    }
-  })
-
   try {
     await $fetch('/api/upload/payment-proof', {
       method: 'POST',
       body: formData
     })
+    await refresh()
     Swal.fire('Success', 'Payment proof uploaded successfully', 'success')
-    refresh()
   } catch (error: any) {
     Swal.fire('Error', error.data?.message || 'Failed to upload proof', 'error')
   } finally {
@@ -167,96 +143,103 @@ const handleUploadProof = async (event: Event) => {
 
 <template>
   <div class="space-y-6">
-    <div class="flex items-center gap-4">
-      <NuxtLink to="/admin/orders" class="p-2 text-gray-500 hover:bg-off-white rounded-lg transition-colors">
-        <ArrowLeftIcon class="w-5 h-5" />
-      </NuxtLink>
-      <div>
-        <h2 class="text-2xl font-bold text-apple-black">Order Details</h2>
-        <p class="text-gray-500 mt-1" v-if="order">{{ order.invoiceNumber }}</p>
+    <div class="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+      <div class="flex items-center gap-4">
+        <UButton to="/admin/orders" icon="i-heroicons-arrow-left" color="neutral" variant="ghost" />
+        <div>
+          <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Order Details</h2>
+          <p class="text-gray-500 dark:text-gray-400 mt-1" v-if="order">{{ order.invoiceNumber }}</p>
+        </div>
       </div>
     </div>
 
-    <div v-if="pending" class="flex justify-center p-12">
-      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-apple-blue"></div>
+    <!-- Spinner for initial load only -->
+    <div v-if="pending && !order" class="flex justify-center p-12">
+      <UIcon name="i-heroicons-arrow-path" class="w-10 h-10 animate-spin text-primary-500" />
     </div>
-
-    <div v-else-if="!order" class="text-center p-12 text-gray-500">
+    
+    <div v-else-if="!pending && !order" class="text-center p-12 text-gray-500">
       Order not found.
     </div>
 
-    <div v-else class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div v-show="order" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
       
       <!-- Left Column: Details -->
       <div class="lg:col-span-2 space-y-6">
         <!-- Status Banner -->
-        <div class="bg-white rounded-2xl border border-light-gray shadow-sm p-6 flex justify-between items-center">
-          <div>
-            <p class="text-sm text-gray-500 mb-1">Current Status</p>
-            <AdminStatusBadge :status="order.status" class="text-sm px-3 py-1.5" />
+        <UCard :ui="{ body: { padding: 'px-4 py-5 sm:p-6' } }">
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+              <p class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Current Status</p>
+              <AdminStatusBadge :status="order.status" class="text-base px-3 py-1.5" />
+            </div>
+            <div class="flex flex-wrap gap-2">
+              <UButton :loading="isUpdating" v-if="order.status === 'payment_uploaded'" @click="updateStatus('verified')" icon="i-heroicons-check-circle" color="primary" class="font-semibold">
+                Verify Payment
+              </UButton>
+              <UButton :loading="isUpdating" v-if="order.status === 'verified'" @click="updateStatus('completed')" icon="i-heroicons-check-badge" color="success" class="font-semibold">
+                Complete Order
+              </UButton>
+              <UButton :loading="isUpdating" v-if="!['completed', 'cancelled'].includes(order.status)" @click="updateStatus('cancelled')" color="error" variant="subtle" class="font-semibold">
+                Cancel Order
+              </UButton>
+            </div>
           </div>
-          <div class="flex gap-2">
-            <button v-if="order.status === 'payment_uploaded'" @click="updateStatus('verified')" class="px-4 py-2 bg-apple-blue text-white rounded-xl text-sm font-medium hover:bg-apple-blue-hover transition-colors flex items-center gap-2">
-              <CheckCircleIcon class="w-4 h-4" /> Verify Payment
-            </button>
-            <button v-if="order.status === 'verified'" @click="updateStatus('completed')" class="px-4 py-2 bg-green-600 text-white rounded-xl text-sm font-medium hover:bg-green-700 transition-colors flex items-center gap-2">
-              <CheckCircleIcon class="w-5 h-5" />
-              Complete Order
-            </button>
-            <button v-if="!['completed', 'cancelled'].includes(order.status)" @click="updateStatus('cancelled')" class="px-4 py-2 bg-red-100 text-red-700 rounded-xl text-sm font-medium hover:bg-red-200 transition-colors flex items-center gap-2">
-              Cancel Order
-            </button>
-          </div>
-        </div>
+        </UCard>
 
         <!-- Items -->
-        <div class="bg-white rounded-2xl border border-light-gray shadow-sm p-6">
-          <div class="flex justify-between items-center mb-4">
-            <h3 class="font-bold text-lg text-apple-black">Order Items</h3>
-            <a :href="`/api/orders/${order.id}/invoice-pdf`" target="_blank" class="px-3 py-1.5 bg-off-white text-apple-blue rounded-lg text-sm font-medium hover:bg-gray-100 flex items-center gap-2">
-              <DocumentTextIcon class="w-4 h-4" /> Preview Invoice PDF
-            </a>
-          </div>
+        <UCard>
+          <template #header>
+            <div class="flex justify-between items-center">
+              <h3 class="font-bold text-lg text-gray-900 dark:text-white">Order Items</h3>
+              <UButton :to="`/api/orders/${order.id}/invoice-pdf`" target="_blank" icon="i-heroicons-document-text" color="primary" variant="soft" size="sm">
+                Preview Invoice
+              </UButton>
+            </div>
+          </template>
+
           <div class="space-y-4">
-            <div v-for="item in order.items" :key="item.id" class="flex justify-between items-center py-2 border-b border-light-gray last:border-0">
+            <div v-for="item in order.items" :key="item.id" class="flex justify-between items-center py-3 border-b border-gray-200 dark:border-gray-800 last:border-0">
               <div>
-                <p class="font-medium text-apple-black">{{ item.productName }}</p>
-                <p class="text-sm text-gray-500">SKU: {{ item.productSku }} x {{ item.quantity }}</p>
+                <p class="font-semibold text-gray-900 dark:text-white">{{ item.productName }}</p>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">SKU: {{ item.productSku }} <span class="mx-1">&bull;</span> Qty: {{ item.quantity }}</p>
               </div>
-              <p class="font-medium text-apple-black">{{ formatCurrency(item.lineTotal) }}</p>
+              <p class="font-semibold text-gray-900 dark:text-white">{{ formatCurrency(item.lineTotal) }}</p>
             </div>
             
-            <div class="pt-4 space-y-2">
-              <div class="flex justify-between text-gray-500">
+            <div class="pt-4 space-y-3">
+              <div class="flex justify-between text-gray-600 dark:text-gray-400">
                 <span>Subtotal</span>
                 <span>{{ formatCurrency(order.subtotal) }}</span>
               </div>
-              <div class="flex justify-between text-gray-500">
+              <div class="flex justify-between text-gray-600 dark:text-gray-400">
                 <span>Unique Code</span>
                 <span>{{ formatCurrency(order.uniqueCode) }}</span>
               </div>
-              <div class="flex justify-between font-bold text-lg pt-2 border-t border-light-gray text-apple-black">
+              <div class="flex justify-between font-bold text-xl pt-4 border-t border-gray-200 dark:border-gray-800 text-gray-900 dark:text-white">
                 <span>Total</span>
-                <span class="text-apple-blue">{{ formatCurrency(order.total) }}</span>
+                <span class="text-primary-500">{{ formatCurrency(order.total) }}</span>
               </div>
             </div>
           </div>
-        </div>
+        </UCard>
         
         <!-- Payment Proof -->
-        <div class="bg-white rounded-2xl border border-light-gray shadow-sm p-6">
-          <h3 class="font-bold text-lg mb-4 text-apple-black">Payment Proof</h3>
+        <UCard>
+          <template #header>
+            <h3 class="font-bold text-lg text-gray-900 dark:text-white">Payment Proof</h3>
+          </template>
           
-          <div v-if="order.paymentProofUrl" class="aspect-video bg-off-white rounded-xl border border-light-gray overflow-hidden flex items-center justify-center relative group mb-4">
-            <img v-if="order.paymentProofUrl.match(/\.(jpeg|jpg|gif|png|webp)$/i)" :src="order.paymentProofUrl" class="object-contain w-full h-full" />
+          <div v-if="order.paymentProofUrl" class="aspect-video bg-gray-100 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden flex items-center justify-center relative group">
+            <img v-if="order.paymentProofUrl.match(/\.(jpeg|jpg|gif|png|webp)$/i)" :src="order.paymentProofUrl" class="object-contain w-full h-full transition-transform duration-300 group-hover:scale-105" />
             <div v-else class="text-center">
-              <DocumentTextIcon class="w-12 h-12 text-gray-400 mx-auto mb-2" />
-              <p class="text-sm font-medium text-gray-600">Document File</p>
+              <UIcon name="i-heroicons-document" class="w-16 h-16 text-gray-400 mx-auto mb-3" />
+              <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Document File</p>
             </div>
-            <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-              <a :href="order.paymentProofUrl" target="_blank" class="px-4 py-2 bg-white text-apple-black rounded-lg font-medium text-sm hover:bg-gray-100">
+            <div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+              <UButton :to="order.paymentProofUrl" target="_blank" icon="i-heroicons-arrow-top-right-on-square" color="white" variant="solid">
                 Open Full Size
-              </a>
+              </UButton>
             </div>
           </div>
           
@@ -265,104 +248,103 @@ const handleUploadProof = async (event: Event) => {
             <button 
               @click="triggerUpload" 
               :disabled="isUploadingProof"
-              class="w-full py-4 border-2 border-dashed border-light-gray rounded-xl flex flex-col items-center justify-center hover:bg-off-white transition-colors gap-2"
+              class="w-full py-8 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl flex flex-col items-center justify-center hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors gap-3 focus:outline-none focus:ring-2 focus:ring-primary-500"
             >
-              <div v-if="isUploadingProof" class="animate-spin rounded-full h-8 w-8 border-b-2 border-apple-blue"></div>
+              <UIcon v-if="isUploadingProof" name="i-heroicons-arrow-path" class="animate-spin w-10 h-10 text-primary-500" />
               <template v-else>
-                <DocumentTextIcon class="w-8 h-8 text-gray-400" />
-                <span class="text-sm font-medium text-apple-black">Click to upload payment proof</span>
-                <span class="text-xs text-gray-500">PNG, JPG, PDF up to 5MB</span>
+                <UIcon name="i-heroicons-arrow-up-tray" class="w-10 h-10 text-gray-400" />
+                <span class="text-sm font-semibold text-gray-900 dark:text-white">Click to upload payment proof</span>
+                <span class="text-xs text-gray-500 dark:text-gray-400">PNG, JPG, PDF up to 5MB</span>
               </template>
             </button>
           </div>
-          <div v-else class="text-center p-6 bg-off-white rounded-xl border border-light-gray">
-            <p class="text-sm text-gray-500">No payment proof uploaded.</p>
+          <div v-else class="text-center p-8 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700">
+            <p class="text-sm text-gray-500 dark:text-gray-400 font-medium">No payment proof uploaded.</p>
           </div>
-        </div>
+        </UCard>
       </div>
 
       <!-- Right Column: Customer -->
       <div class="space-y-6">
-        <div class="bg-white rounded-2xl border border-light-gray shadow-sm p-6">
-          <div class="flex justify-between items-center mb-4">
-            <h3 class="font-bold text-lg text-apple-black">Customer Details</h3>
-            <button v-if="!isEditing" @click="startEdit" class="text-apple-blue hover:text-apple-blue-hover p-1" title="Edit Details">
-              <PencilIcon class="w-5 h-5" />
-            </button>
-          </div>
+        <UCard>
+          <template #header>
+            <div class="flex justify-between items-center">
+              <h3 class="font-bold text-lg text-gray-900 dark:text-white">Customer Details</h3>
+              <UButton v-if="!isEditing" @click="startEdit" icon="i-heroicons-pencil" color="neutral" variant="ghost" size="sm" />
+            </div>
+          </template>
           
-          <div v-if="isEditing" class="space-y-4 text-sm">
-            <div>
-              <label class="block text-gray-500 mb-1">Name</label>
-              <input v-model="editData.billingDetails.fullName" type="text" class="w-full px-3 py-2 border border-light-gray rounded-lg focus:outline-none focus:border-apple-blue" />
-            </div>
-            <div>
-              <label class="block text-gray-500 mb-1">Email</label>
-              <input v-model="editData.billingDetails.email" type="email" class="w-full px-3 py-2 border border-light-gray rounded-lg focus:outline-none focus:border-apple-blue" />
-            </div>
-            <div>
-              <label class="block text-gray-500 mb-1">Phone</label>
-              <input v-model="editData.billingDetails.phone" type="text" class="w-full px-3 py-2 border border-light-gray rounded-lg focus:outline-none focus:border-apple-blue" />
-            </div>
-            <div>
-              <label class="block text-gray-500 mb-1">Address</label>
-              <textarea v-model="editData.billingDetails.address" rows="3" class="w-full px-3 py-2 border border-light-gray rounded-lg focus:outline-none focus:border-apple-blue"></textarea>
-            </div>
+          <div v-if="isEditing" class="space-y-4">
+            <UFormField label="Name">
+              <UInput v-model="editData.billingDetails.fullName" />
+            </UFormField>
+            <UFormField label="Email">
+              <UInput v-model="editData.billingDetails.email" type="email" />
+            </UFormField>
+            <UFormField label="Phone">
+              <UInput v-model="editData.billingDetails.phone" />
+            </UFormField>
+            <UFormField label="Address">
+              <UTextarea v-model="editData.billingDetails.address" :rows="3" />
+            </UFormField>
           </div>
-          <div v-else class="space-y-4 text-sm">
+          <div v-else class="space-y-5">
             <div>
-              <p class="text-gray-500 mb-1">Name</p>
-              <p class="font-medium text-apple-black">{{ order.billingDetails.fullName }}</p>
+              <p class="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1 uppercase tracking-wider">Name</p>
+              <p class="font-semibold text-gray-900 dark:text-white">{{ order.billingDetails.fullName }}</p>
             </div>
             <div>
-              <p class="text-gray-500 mb-1">Email</p>
-              <p class="font-medium text-apple-black">{{ order.billingDetails.email }}</p>
+              <p class="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1 uppercase tracking-wider">Email</p>
+              <p class="font-semibold text-gray-900 dark:text-white">{{ order.billingDetails.email }}</p>
             </div>
             <div>
-              <p class="text-gray-500 mb-1">Phone</p>
-              <p class="font-medium text-apple-black">{{ order.billingDetails.phone }}</p>
+              <p class="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1 uppercase tracking-wider">Phone</p>
+              <p class="font-semibold text-gray-900 dark:text-white">{{ order.billingDetails.phone }}</p>
             </div>
             <div>
-              <p class="text-gray-500 mb-1">Address</p>
-              <p class="font-medium text-apple-black">{{ order.billingDetails.address }}</p>
+              <p class="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1 uppercase tracking-wider">Address</p>
+              <p class="font-medium text-gray-900 dark:text-white leading-relaxed">{{ order.billingDetails.address }}</p>
             </div>
           </div>
 
           <!-- Vessel Details Edit Form (inside the same block if editing) -->
-          <div v-if="isEditing && editData.vesselDetails" class="mt-6 pt-6 border-t border-light-gray">
-            <h3 class="font-bold text-lg mb-4 text-apple-black">Vessel Details</h3>
-            <div class="space-y-4 text-sm">
-              <div>
-                <label class="block text-gray-500 mb-1">Vessel Name</label>
-                <input v-model="editData.vesselDetails.vesselName" type="text" class="w-full px-3 py-2 border border-light-gray rounded-lg focus:outline-none focus:border-apple-blue" />
-              </div>
-              <div>
-                <label class="block text-gray-500 mb-1">Vessel ID (GT)</label>
-                <input v-model="editData.vesselDetails.vesselId" type="text" class="w-full px-3 py-2 border border-light-gray rounded-lg focus:outline-none focus:border-apple-blue" />
-              </div>
+          <template v-if="isEditing && editData.vesselDetails">
+            <div class="mt-8 mb-4 border-t border-gray-200 dark:border-gray-800"></div>
+            <h3 class="font-bold text-lg mb-4 text-gray-900 dark:text-white">Vessel Details</h3>
+            <div class="space-y-4">
+              <UFormField label="Vessel Name">
+                <UInput v-model="editData.vesselDetails.vesselName" />
+              </UFormField>
+              <UFormField label="Vessel ID (GT)">
+                <UInput v-model="editData.vesselDetails.vesselId" />
+              </UFormField>
             </div>
-          </div>
+          </template>
           
-          <div v-if="isEditing" class="mt-6 flex gap-2 justify-end">
-            <button @click="isEditing = false" class="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-xl transition-colors">Cancel</button>
-            <button @click="saveEdit" class="px-4 py-2 text-sm font-medium bg-apple-blue text-white hover:bg-apple-blue-hover rounded-xl transition-colors shadow-sm">Save Changes</button>
-          </div>
-        </div>
+          <template #footer v-if="isEditing">
+            <div class="flex gap-3 justify-end w-full">
+              <UButton @click="isEditing = false" color="neutral" variant="soft">Cancel</UButton>
+              <UButton @click="saveEdit" color="primary">Save Changes</UButton>
+            </div>
+          </template>
+        </UCard>
 
         <!-- Vessel Details Display (separate block if not editing) -->
-        <div v-if="order.vesselDetails && !isEditing" class="bg-white rounded-2xl border border-light-gray shadow-sm p-6">
-          <h3 class="font-bold text-lg mb-4 text-apple-black">Vessel Details</h3>
-          <div class="space-y-4 text-sm">
+        <UCard v-if="order.vesselDetails && !isEditing">
+          <template #header>
+            <h3 class="font-bold text-lg text-gray-900 dark:text-white">Vessel Details</h3>
+          </template>
+          <div class="space-y-5">
             <div>
-              <p class="text-gray-500 mb-1">Vessel Name</p>
-              <p class="font-medium text-apple-black">{{ order.vesselDetails.vesselName || '-' }}</p>
+              <p class="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1 uppercase tracking-wider">Vessel Name</p>
+              <p class="font-semibold text-gray-900 dark:text-white">{{ order.vesselDetails.vesselName || '-' }}</p>
             </div>
             <div>
-              <p class="text-gray-500 mb-1">Vessel ID (GT)</p>
-              <p class="font-medium text-apple-black">{{ order.vesselDetails.vesselId || '-' }}</p>
+              <p class="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1 uppercase tracking-wider">Vessel ID (GT)</p>
+              <p class="font-semibold text-gray-900 dark:text-white">{{ order.vesselDetails.vesselId || '-' }}</p>
             </div>
           </div>
-        </div>
+        </UCard>
       </div>
 
     </div>

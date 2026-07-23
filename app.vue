@@ -1,11 +1,17 @@
 <script setup lang="ts">
 import { CogIcon } from '@heroicons/vue/24/outline'
-const route = useRoute()
-const { data: settings } = await useFetch<any>('/api/settings/public')
 
+const route = useRoute()
+const { settings, fetchPublicSettings } = useSystemSettings()
+
+onMounted(() => {
+  fetchPublicSettings(true)
+})
+
+// Check maintenance status dynamically
 const isMaintenance = computed(() => {
-  if (!settings.value?.maintenance_mode) return false
-  return !route.path.startsWith('/admin')
+  if (route.path.startsWith('/admin')) return false
+  return settings.value?.maintenance_mode === true
 })
 </script>
 
@@ -22,7 +28,7 @@ const isMaintenance = computed(() => {
           {{ settings?.store_name || 'Our store' }} is currently undergoing scheduled maintenance to improve your experience. We apologize for the inconvenience and will be back online shortly.
         </p>
         <p class="text-sm text-gray-400">
-          Need urgent help? Contact us at <a :href="'mailto:' + settings?.contact_email" class="text-apple-blue hover:underline">{{ settings?.contact_email || 'support@example.com' }}</a>
+          Need urgent help? Contact us at <a :href="'mailto:' + (settings?.contact_email || 'hello@imaniprima.co.id')" class="text-apple-blue hover:underline">{{ settings?.contact_email || 'hello@imaniprima.co.id' }}</a>
         </p>
       </div>
     </div>

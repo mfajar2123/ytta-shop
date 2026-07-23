@@ -70,7 +70,11 @@ const { cartItems, subtotal, formatCurrency } = useCart()
 const { isValid } = useCheckout()
 const isProcessing = ref(false)
 
-const { data: settings } = await useFetch<any>('/api/settings/public')
+const { settings, fetchPublicSettings } = useSystemSettings()
+
+onMounted(() => {
+  fetchPublicSettings(true)
+})
 
 const handleOrder = async () => {
   if (isProcessing.value) return;
@@ -143,18 +147,19 @@ const handleOrder = async () => {
       body: payload
     })
 
-    await Swal.fire({
+    Swal.fire({
       icon: 'success',
       title: 'Order Placed!',
       html: `Your order has been placed successfully.<br>Invoice Number: <strong>${res.order.invoiceNumber}</strong><br><br>Please check your email for the proforma invoice and payment instructions.`,
       confirmButtonColor: '#0071E3',
       background: '#FFFFFF',
       color: '#1D1D1F'
+    }).then(() => {
+      window.location.href = '/shop'
     })
 
-    // Clear cart and redirect to shop
+    // Clear cart
     cartItems.value = []
-    router.push('/shop')
 
   } catch (error: any) {
     Swal.fire({
